@@ -34,8 +34,9 @@
     <TargetFramework>net8.0-windows</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AnlaxPackage" Version="$(RevitVersion).*" />
     <PackageReference Include="Nice3point.Revit.Api.AdWindows" Version="$(RevitVersion).*" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="2022.1.21" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="2022.1.21" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="IconRevitPanel.Designer.cs">
@@ -52,5 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Icons\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="AnlaxPackage">
+      <HintPath>..\AnlaxPackage\bin\Release R22\net48\AnlaxPackage.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

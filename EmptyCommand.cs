@@ -16,7 +16,6 @@ namespace AnlaxBase
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            App.externalCOmmand = commandData;
             if (!string.IsNullOrEmpty(App.LastDllPath) && !string.IsNullOrEmpty(App.LastNameClass))
             {
                 InvokeRevitCommand(App.LastNameClass, commandData, ref message, elements, App.LastDllPath);

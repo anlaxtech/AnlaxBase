@@ -19,7 +19,6 @@ using Autodesk.Internal.Windows;
 using static Autodesk.Revit.DB.SpecTypeId;
 using ComboBox = Autodesk.Revit.UI.ComboBox;
 using AnlaxPackage;
-using AnlaxPackage.Auth;
 
 namespace AnlaxBase
 {
@@ -32,12 +31,12 @@ namespace AnlaxBase
             }
         }
 
-        private string TabName { get;set; }
+        private string TabName { get; set; }
 
         private List<RevitRibbonPanelCustom> revitRibbonPanelCustoms = new List<RevitRibbonPanelCustom>();
 
         public UIControlledApplication uiappStart { get; set; }
-        private ComboBox comboBoxChoose {  get; set; }
+        private ComboBox comboBoxChoose { get; set; }
         private string comboBoxName
         {
             get
@@ -46,9 +45,7 @@ namespace AnlaxBase
             }
         }
         private int comboBoxCountReload { get; set; }
-        public RibbonPanel ribbonPanelBase { get; set; }    
-
-        public static ExternalCommandData externalCOmmand { get; set; }
+        public RibbonPanel ribbonPanelBase { get; set; }
         public static UIApplication UIApplicationCurrent { get; set; }
 
         public static string LastDllPath { get; set; }
@@ -86,50 +83,45 @@ namespace AnlaxBase
 
         private void OnItemExecuted(object sender, RibbonItemExecutedEventArgs e)
         {
-            try
+            string NameClass = e.Item.Id;
+            int index = NameClass.LastIndexOf('%');
+            if (index != -1 && index + 1 < NameClass.Length)
             {
-                string NameClass = e.Item.Id;
-                int index = NameClass.LastIndexOf('%');
-                if (index != -1 && index + 1 < NameClass.Length)
+                string result = NameClass.Substring(index + 1);
+                if (result == "HotLoad")
                 {
-                    string result = NameClass.Substring(index + 1);
-                    LastNameClass= result;
-                    if (result =="HotReload")
+                    LaunchAnlaxAutoUpdate();
+                    foreach (var panelName in revitRibbonPanelCustoms)
                     {
-                        foreach (var panelName in revitRibbonPanelCustoms)
-                        {
-                            RemovePanelClear(TabName, panelName);
-                        }
-                        revitRibbonPanelCustoms.Clear();
-                        RemoveItem(TabName, "Настройка плагина", comboBoxName);
-                        comboBoxCountReload++;
-                        CreateChoosenBox();
-                        List<string> list = FindDllsWithApplicationStart();
-                        foreach (string item in list)
-                        {
-                            bool BimDownLoad = LoadPlugin(uiappStart, item, comboBoxChoose);
-                        }
-                        //LaunchAnlaxAutoUpdate();
+                        RemovePanelClear(TabName, panelName);
                     }
-                    else if (result !="AuthStart" && result != "OpenWebHelp")
+                    revitRibbonPanelCustoms.Clear();
+                    RemoveItem(TabName, "Настройка плагина", comboBoxName);
+                    comboBoxCountReload++;
+                    CreateChoosenBox();
+                    List<string> list = FindDllsWithApplicationStart();
+                    foreach (string item in list)
                     {
-                        int lastPercentIndex = NameClass.LastIndexOf('%');
-
-                        // Находим предпоследний символ '%'
-                        int secondLastPercentIndex = NameClass.LastIndexOf('%', lastPercentIndex - 1);
-
-                        // Извлекаем подстроку между предпоследним и последним '%'
-                        string panelName = NameClass.Substring(secondLastPercentIndex + 1, lastPercentIndex - secondLastPercentIndex - 1);
-                        string pathDll = revitRibbonPanelCustoms.Where(it => it.NamePanel == panelName).FirstOrDefault().AssemlyPath;
-                        LastDllPath = pathDll;
-                        RevitCommandId id_addin_button_cmd = RevitCommandId.LookupCommandId(NameClass);
-                        UIApplicationCurrent = externalCOmmand.Application;
-                        UIApplicationCurrent.PostCommand(id_addin_button_cmd); 
+                        bool BimDownLoad = LoadPlugin(uiappStart, item, comboBoxChoose);
                     }
+                    
                 }
             }
-            catch { }
+            else // если кнопка добавлена черз ad.windows
+            {
+                LastNameClass = e.Item.UID;
+                LastDllPath = e.Item.GroupName;
+                if (!string.IsNullOrEmpty(LastNameClass) && !string.IsNullOrEmpty(LastDllPath))
+                {
+                    string empty2 = "CustomCtrl_%CustomCtrl_%Anlax%Настройка плагина%EmptyCommand";
+                    RevitCommandId id_addin_button_cmd = RevitCommandId.LookupCommandId(empty2);
+                    UIApplicationCurrent.PostCommand(id_addin_button_cmd);
+                }
+            }
         }
+    
+
+        
         public static void RemovePanelClear(string tabName, RevitRibbonPanelCustom revitRibbon)
         {
             AW.RibbonControl ribbon = AW.ComponentManager.Ribbon;
@@ -215,6 +207,7 @@ namespace AnlaxBase
 
         public Result OnStartup(UIControlledApplication application)
         {
+            application.ControlledApplication.DocumentOpened += ControlledApplication_DocumentOpened;
             string assemblyLocation = Assembly.GetExecutingAssembly().Location;
             comboBoxCountReload = 0;
             pluginDirectory = Path.GetDirectoryName(assemblyLocation);
@@ -230,7 +223,6 @@ namespace AnlaxBase
             }
             catch { }
             ribbonPanelBase = application.CreateRibbonPanel(TabName, "Настройка плагина");
-
             PushButtonData pushButtonData = new PushButtonData(nameof(OpenWebHelp), "База\nзнаний", assemblyLocation, typeof(OpenWebHelp).FullName)
             {
                 LargeImage = RevitRibbonPanelCustom.NewBitmapImage(IconRevitPanel.anlax_logo_red, 32)
@@ -243,19 +235,18 @@ namespace AnlaxBase
             };
             ribbonPanelBase.AddItem(pushButtonDataAuth);
 
-            PushButtonData pushButtonDataHotReload = new PushButtonData(nameof(HotReload), "Выгрузить\nплагин", assemblyLocation, typeof(HotReload).FullName)
+            PushButtonData pushButtonDataHotReload = new PushButtonData(nameof(HotLoad), "Обновить\nплагин", assemblyLocation, typeof(HotLoad).FullName)
             {
                 LargeImage = RevitRibbonPanelCustom.NewBitmapImage(IconRevitPanel.anlax_logo_red, 32)
             };
             ribbonPanelBase.AddItem(pushButtonDataHotReload);
-            PushButtonData pushButtonDataHotLoad = new PushButtonData(nameof(HotLoad), "Загрузить\nплагин", assemblyLocation, typeof(HotLoad).FullName)
+            PushButtonData pushButtonDataHotLoad = new PushButtonData(nameof(EmptyCommand), "Последняя\nкоманда", assemblyLocation, typeof(EmptyCommand).FullName)
             {
                 LargeImage = RevitRibbonPanelCustom.NewBitmapImage(IconRevitPanel.anlax_logo_red, 32)
             };
             ribbonPanelBase.AddItem(pushButtonDataHotLoad);
-
             
-            CreateChoosenBox();
+        CreateChoosenBox();
             List<string> list = FindDllsWithApplicationStart();
             foreach (string item in list)
             {
@@ -263,6 +254,14 @@ namespace AnlaxBase
             }
             return Result.Succeeded;
 
+        }
+
+
+        private void ControlledApplication_DocumentOpened(object sender, DocumentOpenedEventArgs e)
+        {
+            Document sa = e.Document;
+            Autodesk.Revit.ApplicationServices.Application apView =sa.Application;
+            UIApplicationCurrent = new UIApplication(apView);
         }
 
         private void CreateChoosenBox()
@@ -325,66 +324,11 @@ namespace AnlaxBase
             if (revitRibbonPanelCustom != null)
             {
                 revitRibbonPanelCustom.AddToComboBox(comboChoose);
-                revitRibbonPanelCustom.CleanClassPushButton(assemblyLocation, typeof(EmptyCommand).FullName);
-                if (comboBoxCountReload!=0)
-                {
-                    foreach (PushButtonData obButton in revitRibbonPanelCustom.Buttons)
-                    {
-                        obButton.Name = obButton.Name + comboBoxCountReload;
-                    }
-                }
-
                 revitRibbonPanelCustom.CreateRibbonPanel(_app);
                 revitRibbonPanelCustoms.Add(revitRibbonPanelCustom);
                 return true;
             }
             return false;
-        }
-        public static void InvokeRevitCommand(string strCommandName, object commandData, ref string message, object elements, string fullPathDllName)
-        {
-            //Грузим нашу библиотеку в массив байтов.
-            //Таким образом ревит ее не заблокирует на диске.
-            try
-            {
-                byte[] assemblyBytes = File.ReadAllBytes(fullPathDllName);
-                Assembly objAssembly = Assembly.Load(assemblyBytes);
-
-                //Проходимся по сборке.
-                foreach (Type objType in objAssembly.GetTypes())
-                {
-                    //Выбираем класс.
-                    if (objType.IsClass)
-                    {
-                        if (objType.Name.ToLower() == strCommandName.ToLower())
-                        {
-                            object ibaseObject = Activator.CreateInstance(objType);
-
-                            object[] arguments = new object[] { commandData, message, elements };
-
-                            //MethodInfo? mbinfo = objType.GetMethod("Execute");
-                            //mbinfo.Invoke(ibaseObject, arguments);
-
-                            object result = objType.InvokeMember(
-                                "Execute",
-                                BindingFlags.Default | BindingFlags.InvokeMethod,
-                                null,
-                                ibaseObject,
-                                arguments);
-
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-
-                StringBuilder sb = new StringBuilder();
-                foreach (Exception loaderException in ex.LoaderExceptions)
-                {
-                    sb.AppendLine(loaderException.Message);
-                }
-            }
         }
         private void LoadDependentAssemblies()
         {
