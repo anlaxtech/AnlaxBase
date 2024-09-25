@@ -19,8 +19,6 @@ namespace AnlaxBase
             if (!string.IsNullOrEmpty(App.LastDllPath) && !string.IsNullOrEmpty(App.LastNameClass))
             {
                 InvokeRevitCommand(App.LastNameClass, commandData, ref message, elements, App.LastDllPath);
-                App.LastNameClass = string.Empty;
-                App.LastDllPath = string.Empty;
             }
             return Result.Succeeded;
         }
