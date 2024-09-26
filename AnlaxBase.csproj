@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
@@ -48,5 +47,8 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>IconRevitPanel.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="IncludeDll\" />
   </ItemGroup>
 </Project>
