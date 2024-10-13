@@ -13,9 +13,6 @@
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <!-- Свойство для выгрузки в GitHubAction -->
-  <PropertyGroup>
-    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-  </PropertyGroup>
   <PropertyGroup Condition="$(Configuration.Contains('R20'))">
     <RevitVersion>2020</RevitVersion>
     <TargetFramework>net48</TargetFramework>
@@ -59,8 +56,7 @@
     <None Remove="Icons\anlax-logo-red.png" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AnlaxPackage" Version="$(RevitVersion).*" />
-    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+    <PackageReference Include="AnlaxPackage" Version="2022.0.14" />
   </ItemGroup>
 
   <ItemGroup>
