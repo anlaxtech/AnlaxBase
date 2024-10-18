@@ -21,6 +21,7 @@ using AnlaxPackage;
 using System.Drawing;
 using System.Windows.Media.Imaging;
 using Mono.Cecil;
+using AnlaxRevitUpdate;
 
 namespace AnlaxBase
 {
@@ -83,10 +84,21 @@ namespace AnlaxBase
                 System.Windows.MessageBox.Show($"Ошибка при запуске обновления плагина Anlax AutoUpdatePlugin.exe: {ex.Message}");
             }
         }
+        private string UpdateUpdater()
+        {
+            string pathToBaseDll = System.IO.Path.Combine(pluginDirectory, "AutoUpdate\\AnlaxRevitUpdate.dll");
+            string token = "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";
+            string userName = "anlaxtech";
+            string repposotoryName = "AnlaxRevitUpdate";
+            GitHubBaseDownload gitHubBaseDownload = new GitHubBaseDownload(pathToBaseDll, token, userName, repposotoryName, "AutoUpdate");
+            return gitHubBaseDownload.HotReloadPlugin(true);
+        }
+
         public Result OnShutdown(UIControlledApplication application)
         {
             try
             {
+                string updateUpdater =UpdateUpdater();
                 LaunchAnlaxAutoUpdate();
             }
             catch (Exception ex)
