@@ -51,19 +51,21 @@ namespace AnlaxRevitUpdate
         {
             int progress = 0;
 
-            foreach (RevitRibbonPanelCustom revitPanel in listReload)
+            Task updateTask = Task.Run(() =>
             {
-                string message = HotReload(revitPanel);
-                string assemblyPath = revitPanel.AssemlyPath;
-                string plugName = GetPluginName(assemblyPath);
-                progress++;
-                // Обновляем UI через Dispatcher.Invoke для немедленного отображения изменений
-                Dispatcher.Invoke(() =>
+                foreach (RevitRibbonPanelCustom revitPanel in listReload)
                 {
-                    ProgressBarDownload.Value = progress;
-                    TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
-                    TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
-                });
+                    string message = HotReload(revitPanel);
+                    string assemblyPath = revitPanel.AssemlyPath;
+                    string plugName = GetPluginName(assemblyPath);
+                    progress++;
+                    // Обновляем UI через Dispatcher.InvokeAsync
+                    Dispatcher.Invoke(() =>
+                    {
+                        ProgressBarDownload.Value = progress;
+                        TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
+                        TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
+                    });
 
 
 
@@ -74,14 +76,14 @@ namespace AnlaxRevitUpdate
             }
             string messageMain = ReloadMainPlug();
 
-            // После завершения обновления AnlaxBaseUpdater
-            Dispatcher.Invoke(() =>
-            {
-                ProgressBarDownload.Value = ProgressBarDownload.Maximum;
-                TextBlockDownload.Text = "Обновление завершено!";
-                TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
-                TextBlockMessage.Text += "Все обновления завершены!\n";
-            });
+                // После завершения загрузки
+                Dispatcher.Invoke(() =>
+                {
+                    ProgressBarDownload.Value = ProgressBarDownload.Maximum;
+                    TextBlockDownload.Text = "Обновление завершено!";
+                    TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
+                    TextBlockMessage.Text += "Все обновления завершены!\n";
+                });
 
             // Закрываем окно через 2 секунды, если обновления прошли успешно
             if (GoodDownload)
