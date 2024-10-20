@@ -1,8 +1,10 @@
-﻿using AnlaxPackage;
+﻿using AnlaxBase.HotReload;
+using AnlaxPackage;
 using Mono.Cecil;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
@@ -23,62 +25,110 @@ namespace AnlaxRevitUpdate
     public partial class MainWindow : Window
     {
         string PluginAutoUpdateDirectory { get; set; }
-        public bool GoodDownload {  get; set; }
+        public bool GoodDownload { get; set; }
+
         public bool IsDebug
         {
             get
             {
-                if (PluginAutoUpdateDirectory.Contains("AnlaxDev"))
-                {
-                    return true;
-                }
-                return false;
+                return PluginAutoUpdateDirectory.Contains("AnlaxDev");
             }
-        } 
+        }
 
         public MainWindow(List<RevitRibbonPanelCustom> listReload)
         {
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             GoodDownload = true;
             InitializeComponent();
-                try
-                {
-                    TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
-                    Show();
-                    ProgressBarDownload.Maximum = listReload.Count;
-                    int progress = 0;
-                    Task.Run(() =>
-                    {
-                        foreach (RevitRibbonPanelCustom revitPanel in listReload)
-                        {
-                            string message = HotReload(revitPanel);
-                            string assemblyPath = revitPanel.AssemlyPath;
-                            string plugName = GetPluginName(assemblyPath);
-                            progress++;
-                            Dispatcher.Invoke(() =>
-                            {
-                                ProgressBarDownload.Value = progress;
-                                TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
-                                TextBlockDownload.Text = $"{progress}/{listReload.Count} загружено";
-                            });
-                            if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина Anlax")
-                            {
-                                GoodDownload = false;
-                            }
-                        }
-                        if (GoodDownload)
-                        {
-                            Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
-                        }
 
+            // Настраиваем UI
+            TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
+            ProgressBarDownload.Maximum = listReload.Count + 1;
+        }
+
+        // Основная логика обновления
+        public void StartUpdate(List<RevitRibbonPanelCustom> listReload)
+        {
+            int progress = 0;
+
+            Task updateTask = Task.Run(() =>
+            {
+                foreach (RevitRibbonPanelCustom revitPanel in listReload)
+                {
+                    string message = HotReload(revitPanel);
+                    string assemblyPath = revitPanel.AssemlyPath;
+                    string plugName = GetPluginName(assemblyPath);
+                    progress++;
+                    Task.Delay(2000);
+                    // Обновляем UI через Dispatcher.InvokeAsync
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        ProgressBarDownload.Value = progress;
+                        TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
+                        TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
                     });
 
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error", $"Ошибка в автообновлении: {ex.StackTrace}");
-                }
+                string messageMain = ReloadMainPlug();
 
+                // После завершения загрузки
+                Dispatcher.InvokeAsync(() =>
+                {
+                    ProgressBarDownload.Value = ProgressBarDownload.Maximum;
+                    TextBlockDownload.Text = "Обновление завершено!";
+                    TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
+                    TextBlockMessage.Text += "Все обновления завершены!\n";
+                });
+
+                if (messageMain != "Загрузка прошла успешно" && messageMain != "Загружена актуальная версия плагина")
+                {
+                    GoodDownload = false;
+                }
+            });
+
+            // Ожидаем завершения асинхронной задачи синхронно
+            updateTask.Wait();
+
+            // Если обновление прошло успешно, запускаем таймер для закрытия окна
+            if (GoodDownload)
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
+                });
+            }
+        }
+
+        private string ReloadMainPlug()
+        {
+            string pathToBaseDll = System.IO.Path.Combine(PluginAutoUpdateDirectory, "AutoUpdate\\AnlaxRevitUpdate.dll");
+            string token = "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";
+            string userName = "anlaxtech";
+            string repposotoryName = "AnlaxRevitUpdate";
+            GitHubBaseDownload gitHubBaseDownload = new GitHubBaseDownload(pathToBaseDll, token, userName, repposotoryName, "AutoUpdate");
+            return gitHubBaseDownload.HotReloadPlugin(true);
+        }
+
+        private string HotReload(RevitRibbonPanelCustom revitRibbonPanelCustom)
+        {
+            Assembly assembly = revitRibbonPanelCustom.AssemblyLoad;
+
+            // Ищем класс "ApplicationStart"
+            Type typeStart = assembly.GetTypes()
+                .Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater)))
+                .FirstOrDefault();
+
+            if (typeStart != null)
+            {
+                object instance = Activator.CreateInstance(typeStart);
+                MethodInfo onStartupMethod = typeStart.GetMethod("DownloadPluginUpdate");
+                if (onStartupMethod != null)
+                {
+                    string message = (string)onStartupMethod.Invoke(instance, new object[] { revitRibbonPanelCustom.AssemlyPath, IsDebug });
+                    return message;
+                }
+            }
+            return "Ошибка обновления";
         }
         private void CloseWindowCallback(object state)
         {
@@ -89,27 +139,7 @@ namespace AnlaxRevitUpdate
                 Close();
             });
         }
-        private string HotReload(RevitRibbonPanelCustom revitRibbonPanelCustom)
-        {
-            Assembly assembly = revitRibbonPanelCustom.AssemblyLoad;
-            // Ищем класс "ApplicationStart"
-            Type typeStart = assembly.GetTypes()
-.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater)))
-.FirstOrDefault();
 
-            if (typeStart != null)
-            {
-                object instance = Activator.CreateInstance(typeStart);
-                MethodInfo onStartupMethod = typeStart.GetMethod("DownloadPluginUpdate");
-                var allMethods = typeStart.GetMethods();
-                if (onStartupMethod != null)
-                {
-                    string message = (string)onStartupMethod.Invoke(instance, new object[] { revitRibbonPanelCustom.AssemlyPath, IsDebug });
-                    return message;
-                }
-            }
-            return "Ошибка обновления";
-        }
         private void ButtonClose_Click(object sender, RoutedEventArgs e)
         {
             Close();

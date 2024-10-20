@@ -121,6 +121,8 @@ namespace AnlaxBase
                         RemovePanelClear(TabName, panelName);
                     }
                     MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
+                    mainWindow.Show(); // Отображаем окно
+                    mainWindow.StartUpdate(revitRibbonPanelCustoms); // Ожидает выполнения обновлений
                     revitRibbonPanelCustoms.Clear();
                     List<string> list = FindDllsWithApplicationStart();
                     foreach (RevitRibbonPanelCustom revitRibbonPanelCustom1 in revitRibbonPanelCustoms)
@@ -271,12 +273,14 @@ namespace AnlaxBase
             CreateChoosenBox();
             List<string> list = FindDllsWithApplicationStart();
             MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
+            mainWindow.Show(); // Отображаем окно
+            mainWindow.StartUpdate(revitRibbonPanelCustoms); // Ожидает выполнения обновлений
+
             foreach (RevitRibbonPanelCustom revitRibbonPanelCustom1 in revitRibbonPanelCustoms)
             {
                 revitRibbonPanelCustom1.CreateRibbonPanel(uiappStart);
             }
             return Result.Succeeded;
-
         }
 
         private void ControlledApplication_DocumentCreated(object sender, DocumentCreatedEventArgs e)
