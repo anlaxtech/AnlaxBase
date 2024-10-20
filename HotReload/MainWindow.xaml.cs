@@ -26,6 +26,8 @@ namespace AnlaxRevitUpdate
     {
         string PluginAutoUpdateDirectory { get; set; }
         public bool GoodDownload { get; set; }
+        // Добавим событие для завершения
+        public event EventHandler UpdateCompleted;
 
         public bool IsDebug
         {
@@ -94,6 +96,8 @@ namespace AnlaxRevitUpdate
                         Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
                     });
                 }
+                // Поднимаем событие завершения
+                UpdateCompleted?.Invoke(this, EventArgs.Empty);
             });
             }
         // Асинхронная логика обновления
