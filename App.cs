@@ -22,6 +22,7 @@ using System.Drawing;
 using System.Windows.Media.Imaging;
 using Mono.Cecil;
 using AnlaxRevitUpdate;
+using System.Windows.Threading;
 
 namespace AnlaxBase
 {
@@ -88,6 +89,9 @@ namespace AnlaxBase
         {
             try
             {
+                MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
+                mainWindow.Show(); // Отображаем окно
+                mainWindow.StartUpdate(revitRibbonPanelCustoms); // Ожидает выполнения обновлений
                 LaunchAnlaxAutoUpdate();
             }
             catch (Exception ex)
@@ -119,23 +123,23 @@ namespace AnlaxBase
                     {
                         RemovePanelClear(TabName, panelName);
                     }
-                    MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
-                    mainWindow.Show(); // Отображаем окно
+            MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
+            mainWindow.Show(); // Отображаем окно
 
-                    // Создаем DispatcherFrame для ожидания завершения обновления
-                    var frame = new DispatcherFrame();
+            // Создаем DispatcherFrame для ожидания завершения обновления
+            var frame = new DispatcherFrame();
 
-                    // Подписываемся на событие завершения обновления
-                    mainWindow.UpdateCompleted += (s, args) =>
-                    {
-                        // Завершаем DispatcherFrame, когда обновление завершено
-                        frame.Continue = false;
-                    };
+            // Подписываемся на событие завершения обновления
+            mainWindow.UpdateCompleted += (s, args) =>
+            {
+                // Завершаем DispatcherFrame, когда обновление завершено
+                frame.Continue = false;
+            };
 
-                    mainWindow.StartUpdate(revitRibbonPanelCustoms); // Запускаем обновления
+            mainWindow.StartUpdate(revitRibbonPanelCustoms); // Запускаем обновления
 
-                    // Приостанавливаем выполнение до завершения обновлений
-                    Dispatcher.PushFrame(frame);
+            // Приостанавливаем выполнение до завершения обновлений
+            Dispatcher.PushFrame(frame);
                     revitRibbonPanelCustoms.Clear();
                     List<string> list = FindDllsWithApplicationStart();
                     foreach (RevitRibbonPanelCustom revitRibbonPanelCustom1 in revitRibbonPanelCustoms)
