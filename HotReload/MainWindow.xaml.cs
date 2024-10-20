@@ -69,12 +69,12 @@ namespace AnlaxRevitUpdate
 
 
 
-                if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
-                {
-                    GoodDownload = false;
+                    if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
+                    {
+                        GoodDownload = false;
+                    }
                 }
-            }
-            string messageMain = ReloadMainPlug();
+                string messageMain = ReloadMainPlug();
 
                 // После завершения загрузки
                 Dispatcher.Invoke(() =>
@@ -85,15 +85,17 @@ namespace AnlaxRevitUpdate
                     TextBlockMessage.Text += "Все обновления завершены!\n";
                 });
 
-            // Закрываем окно через 2 секунды, если обновления прошли успешно
-            if (GoodDownload)
-            {
-                Dispatcher.Invoke(() =>
+
+                // Закрываем окно через 2 секунды, если обновления прошли успешно
+                if (GoodDownload)
                 {
-                    Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
-                });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
+                    });
+                }
+            });
             }
-        }
         // Асинхронная логика обновления
         public async Task<bool> StartUpdateAsync(List<RevitRibbonPanelCustom> listReload)
         {
