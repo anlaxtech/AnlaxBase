@@ -21,6 +21,7 @@ using AnlaxPackage;
 using System.Drawing;
 using System.Windows.Media.Imaging;
 using Mono.Cecil;
+using AnlaxRevitUpdate;
 
 namespace AnlaxBase
 {
@@ -87,6 +88,7 @@ namespace AnlaxBase
         {
             try
             {
+                MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
                 LaunchAnlaxAutoUpdate();
             }
             catch (Exception ex)
@@ -114,17 +116,12 @@ namespace AnlaxBase
                     RemoveItem(TabName, "Настройка плагина", comboBoxName);
                     comboBoxCountReload++;
                     CreateChoosenBox();
-
-
                     foreach (var panelName in revitRibbonPanelCustoms)
                     {
                         RemovePanelClear(TabName, panelName);
-                        HotReload(panelName);
                     }
+                    MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
                     revitRibbonPanelCustoms.Clear();
-
-                    
-
                     List<string> list = FindDllsWithApplicationStart();
                     foreach (RevitRibbonPanelCustom revitRibbonPanelCustom1 in revitRibbonPanelCustoms)
                     {
@@ -273,6 +270,7 @@ namespace AnlaxBase
 
             CreateChoosenBox();
             List<string> list = FindDllsWithApplicationStart();
+            MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
             foreach (RevitRibbonPanelCustom revitRibbonPanelCustom1 in revitRibbonPanelCustoms)
             {
                 revitRibbonPanelCustom1.CreateRibbonPanel(uiappStart);
@@ -328,34 +326,6 @@ namespace AnlaxBase
                 }
             }
 
-        }
-
-        private string HotReload(RevitRibbonPanelCustom revitRibbonPanelCustom)
-        {
-            byte[] assemblyBytes = File.ReadAllBytes(revitRibbonPanelCustom.AssemlyPath);
-            bool isDebug = false;
-            if (TabName.Contains("Anlax dev"))
-            {
-                isDebug = true;
-            }
-            Assembly assembly = revitRibbonPanelCustom.AssemblyLoad;
-            // Ищем класс "ApplicationStart"
-            Type typeStart = assembly.GetTypes()
-.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater)))
-.FirstOrDefault();
-
-            if (typeStart != null)
-            {
-                object instance = Activator.CreateInstance(typeStart);
-                MethodInfo onStartupMethod = typeStart.GetMethod("DownloadPluginUpdate");
-                var allMethods = typeStart.GetMethods();
-                if (onStartupMethod != null)
-                {
-                    string message = (string)onStartupMethod.Invoke(instance, new object[] { revitRibbonPanelCustom.AssemlyPath, isDebug });
-                    return message;
-                }
-            }
-            return "Ошибка обновления";
         }
         private void LoadDependentAssemblies()
         {
@@ -475,68 +445,7 @@ namespace AnlaxBase
         /// <param name="pixels"></param>
         /// <param name="dpi"></param>
         /// <returns></returns>
-        public static BitmapImage NewBitmapImage(Image img, int pixels = 32, int dpi = 96)
-        {
-            // Создаем новое изображение с заданным разрешением DPI
-            Bitmap newBitmap = new Bitmap(img.Width, img.Height);
-            newBitmap.SetResolution(dpi, dpi);
 
-            // Копируем содержимое изображения img в новое изображение с заданным разрешением
-            using (Graphics g = Graphics.FromImage(newBitmap))
-            {
-                g.DrawImage(img, 0, 0, img.Width, img.Height);
-            }
-
-            // Масштабируем изображение до указанных размеров пикселей
-            Bitmap scaledBitmap = new Bitmap(newBitmap, new System.Drawing.Size(pixels, pixels));
-            return ConvertBitmapToBitmapImage(scaledBitmap);
-        }
-        public static BitmapImage NewBitmapImage(Uri imageUri, int pixels = 32, int dpi = 96)
-        {
-            // Загружаем изображение из Uri
-            BitmapImage bitmapImage = new BitmapImage();
-            bitmapImage.BeginInit();
-            bitmapImage.UriSource = imageUri;
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.EndInit();
-
-            // Преобразуем его в формат Bitmap
-            Bitmap bitmap;
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                PngBitmapEncoder encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
-                encoder.Save(memoryStream);
-                memoryStream.Position = 0;
-                bitmap = new Bitmap(memoryStream);
-            }
-
-            // Создаем новое изображение с заданным разрешением DPI
-            Bitmap newBitmap = new Bitmap(bitmap.Width, bitmap.Height);
-            newBitmap.SetResolution(dpi, dpi);
-
-            // Копируем содержимое изображения в новое изображение с заданным разрешением
-            using (Graphics g = Graphics.FromImage(newBitmap))
-            {
-                g.DrawImage(bitmap, 0, 0, bitmap.Width, bitmap.Height);
-            }
-
-            // Масштабируем изображение до указанных размеров пикселей
-            Bitmap scaledBitmap = new Bitmap(newBitmap, new System.Drawing.Size(pixels, pixels));
-            return ConvertBitmapToBitmapImage(scaledBitmap);
-        }
-        public static BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
-        {
-            MemoryStream memoryStream = new MemoryStream();
-            bitmap.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
-            memoryStream.Position = 0;
-            BitmapImage bitmapImage = new BitmapImage();
-            bitmapImage.BeginInit();
-            bitmapImage.StreamSource = memoryStream;
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.EndInit();
-            return bitmapImage;
-        }
     }
 
 }
