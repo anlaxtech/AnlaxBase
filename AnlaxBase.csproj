@@ -36,20 +36,20 @@
     <RevitVersion>2025</RevitVersion>
     <TargetFramework>net8.0-windows</TargetFramework>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
   <Target Name="CleanOutput" AfterTargets="Build">
     <Message Text="Удаление лишних файлов из выходной директории" Importance="high" />
-
     <!-- Удаляем все файлы кроме вашего сборочного файла (dll, pdb) и AnlaxPackage -->
     <ItemGroup>
       <FilesToDelete Include="$(TargetDir)**\*.dll;$(TargetDir)**\*.pdb" Exclude="$(TargetPath);$(TargetDir)AnlaxPackage.dll;$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
-
     <Delete Files="@(FilesToDelete)" />
   </Target>
-
   <Target Name="CopyAddFilesToBuildDirectory" AfterTargets="Build">
     <Message Text="Копирование папки AddFiles и ее содержимого в $(TargetDir)" Importance="high" />
-
     <!-- Выбираем все файлы и папки внутри IncludeDll -->
     <ItemGroup>
       <AddFiles Include="$(MSBuildProjectDirectory)\AddFiles\**\*.*" />
@@ -58,7 +58,6 @@
     <!-- Копируем папку IncludeDll с сохранением структуры -->
     <Copy SourceFiles="@(AddFiles)" DestinationFiles="@(AddFiles->'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
-
   <ItemGroup>
     <None Remove="Icons\anlax-logo-red.png" />
   </ItemGroup>
@@ -66,20 +65,6 @@
     <PackageReference Include="AnlaxPackage" Version="$(RevitVersion).*" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Icons\ResourceIcon.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ResourceIcon.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Update="Icons\ResourceIcon.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ResourceIcon.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include=".github\workflows\release.yml" />
