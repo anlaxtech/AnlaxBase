@@ -23,29 +23,6 @@ namespace AnlaxRevitUpdate
     public partial class MainWindow : Window
     {
         string PluginAutoUpdateDirectory { get; set; }
-        string PluginDirectory
-        {
-            get
-            {
-                var directoryInfo = new System.IO.DirectoryInfo(PluginAutoUpdateDirectory);
-                var targetDirectory = directoryInfo.Parent;
-                return targetDirectory.FullName;
-            }
-        }
-        public string RevitVersion
-        {
-            get
-            {
-                var directoryInfo = new System.IO.DirectoryInfo(PluginAutoUpdateDirectory);
-
-                // Поднимаемся на 3 уровня вверх
-                var targetDirectory = directoryInfo.Parent.Parent;
-
-                // Получаем название папки (в вашем случае это версия Revit)
-                string revitVersion = targetDirectory.Name;
-                return revitVersion;
-            }
-        }
         public bool GoodDownload {  get; set; }
         public bool IsDebug
         {
@@ -61,6 +38,7 @@ namespace AnlaxRevitUpdate
 
         public MainWindow(List<RevitRibbonPanelCustom> listReload)
         {
+            PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             GoodDownload = true;
             InitializeComponent();
                 try
@@ -113,8 +91,6 @@ namespace AnlaxRevitUpdate
         }
         private string HotReload(RevitRibbonPanelCustom revitRibbonPanelCustom)
         {
-            byte[] assemblyBytes = File.ReadAllBytes(revitRibbonPanelCustom.AssemlyPath);
-
             Assembly assembly = revitRibbonPanelCustom.AssemblyLoad;
             // Ищем класс "ApplicationStart"
             Type typeStart = assembly.GetTypes()
@@ -168,46 +144,6 @@ namespace AnlaxRevitUpdate
 
             // Берем две последние папки и имя файла
             string result = System.IO.Path.Combine(pathParts[pathParts.Length - 1], fileNameWithoutExtension);
-
-            return result;
-        }
-        public List<string> FindDllsWithApplicationStart()
-        {
-            List<string> result = new List<string>();
-
-            // Рекурсивно ищем все файлы с расширением .dll
-            var dllFiles = Directory.GetFiles(PluginDirectory, "*.dll", SearchOption.AllDirectories);
-
-            foreach (var dll in dllFiles)
-            {
-                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(dll))
-                {
-                    try
-                    {
-                        TypeDefinition typeStart = null;
-                        foreach (var type in assemblyDefinition.MainModule.Types)
-                        {
-                            // Проверяем, реализует ли тип интерфейс IPluginUpdater
-                            if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
-                            {
-                                typeStart = type;
-                                break;
-                            }
-                        }
-
-                        if (typeStart != null)
-                        {
-                            result.Add(dll);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Логируем ошибки, если нужно
-                        // Console.WriteLine($"Ошибка при обработке {dll}: {ex.Message}");
-                    }
-                }
-
-            }
 
             return result;
         }
