@@ -22,7 +22,6 @@ using System.Drawing;
 using System.Windows.Media.Imaging;
 using Mono.Cecil;
 using AnlaxRevitUpdate;
-using System.Windows.Threading;
 
 namespace AnlaxBase
 {
@@ -89,23 +88,6 @@ namespace AnlaxBase
         {
             try
             {
-                MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
-                mainWindow.Show(); // Отображаем окно
-
-                // Создаем DispatcherFrame для ожидания завершения обновления
-                var frame = new DispatcherFrame();
-
-                // Подписываемся на событие завершения обновления
-                mainWindow.UpdateCompleted += (s, args) =>
-                {
-                    // Завершаем DispatcherFrame, когда обновление завершено
-                    frame.Continue = false;
-                };
-
-                mainWindow.StartUpdate(revitRibbonPanelCustoms); // Запускаем обновления
-
-                // Приостанавливаем выполнение до завершения обновлений
-                Dispatcher.PushFrame(frame);
                 LaunchAnlaxAutoUpdate();
             }
             catch (Exception ex)

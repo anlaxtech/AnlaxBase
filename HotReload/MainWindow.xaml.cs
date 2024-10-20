@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace AnlaxRevitUpdate
 {
@@ -100,54 +101,6 @@ namespace AnlaxRevitUpdate
                 UpdateCompleted?.Invoke(this, EventArgs.Empty);
             });
             }
-        // Асинхронная логика обновления
-        public async Task<bool> StartUpdateAsync(List<RevitRibbonPanelCustom> listReload)
-        {
-            int progress = 0;
-
-            foreach (RevitRibbonPanelCustom revitPanel in listReload)
-            {
-                string message = await Task.Run(() => HotReload(revitPanel));
-                string assemblyPath = revitPanel.AssemlyPath;
-                string plugName = GetPluginName(assemblyPath);
-                progress++;
-
-                // Обновляем UI через Dispatcher.Invoke для немедленного отображения изменений
-                Dispatcher.Invoke(() =>
-                {
-                    ProgressBarDownload.Value = progress;
-                    TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
-                    TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
-                });
-
-                if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
-                {
-                    GoodDownload = false;
-                }
-            }
-
-            string messageMain = await Task.Run(() => ReloadMainPlug());
-
-            // После завершения обновления AnlaxBaseUpdater
-            Dispatcher.Invoke(() =>
-            {
-                ProgressBarDownload.Value = ProgressBarDownload.Maximum;
-                TextBlockDownload.Text = "Обновление завершено!";
-                TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
-                TextBlockMessage.Text += "Все обновления завершены!\n";
-            });
-
-            // Закрываем окно через 2 секунды, если обновления прошли успешно
-            if (GoodDownload)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
-                });
-            }
-            return true;
-        }
-
         private string ReloadMainPlug()
         {
             string pathToBaseDll = System.IO.Path.Combine(PluginAutoUpdateDirectory, "AutoUpdate\\AnlaxRevitUpdate.dll");
