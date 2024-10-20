@@ -122,7 +122,8 @@ namespace AnlaxBase
                     }
                     MainWindow mainWindow = new MainWindow(revitRibbonPanelCustoms);
                     mainWindow.Show(); // Отображаем окно
-                    mainWindow.StartUpdate(revitRibbonPanelCustoms); // Ожидает выполнения обновлений
+                    var folfderTask = mainWindow.StartUpdateAsync(revitRibbonPanelCustoms);
+                    var fa=folfderTask.GetAwaiter().GetResult();
                     revitRibbonPanelCustoms.Clear();
                     List<string> list = FindDllsWithApplicationStart();
                     foreach (RevitRibbonPanelCustom revitRibbonPanelCustom1 in revitRibbonPanelCustoms)

@@ -51,52 +51,93 @@ namespace AnlaxRevitUpdate
         {
             int progress = 0;
 
-            Task updateTask = Task.Run(() =>
+            foreach (RevitRibbonPanelCustom revitPanel in listReload)
             {
-                foreach (RevitRibbonPanelCustom revitPanel in listReload)
+                string message = HotReload(revitPanel);
+                string assemblyPath = revitPanel.AssemlyPath;
+                string plugName = GetPluginName(assemblyPath);
+                progress++;
+                // Обновляем UI через Dispatcher.Invoke для немедленного отображения изменений
+                Dispatcher.Invoke(() =>
                 {
-                    string message = HotReload(revitPanel);
-                    string assemblyPath = revitPanel.AssemlyPath;
-                    string plugName = GetPluginName(assemblyPath);
-                    progress++;
-                    Task.Delay(2000);
-                    // Обновляем UI через Dispatcher.InvokeAsync
-                    Dispatcher.InvokeAsync(() =>
-                    {
-                        ProgressBarDownload.Value = progress;
-                        TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
-                        TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
-                    });
-
-                }
-                string messageMain = ReloadMainPlug();
-
-                // После завершения загрузки
-                Dispatcher.InvokeAsync(() =>
-                {
-                    ProgressBarDownload.Value = ProgressBarDownload.Maximum;
-                    TextBlockDownload.Text = "Обновление завершено!";
-                    TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
-                    TextBlockMessage.Text += "Все обновления завершены!\n";
+                    ProgressBarDownload.Value = progress;
+                    TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
+                    TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
                 });
 
-                if (messageMain != "Загрузка прошла успешно" && messageMain != "Загружена актуальная версия плагина")
+
+
+                if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
                 {
                     GoodDownload = false;
                 }
+            }
+            string messageMain = ReloadMainPlug();
+
+            // После завершения обновления AnlaxBaseUpdater
+            Dispatcher.Invoke(() =>
+            {
+                ProgressBarDownload.Value = ProgressBarDownload.Maximum;
+                TextBlockDownload.Text = "Обновление завершено!";
+                TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
+                TextBlockMessage.Text += "Все обновления завершены!\n";
             });
 
-            // Ожидаем завершения асинхронной задачи синхронно
-            updateTask.Wait();
-
-            // Если обновление прошло успешно, запускаем таймер для закрытия окна
+            // Закрываем окно через 2 секунды, если обновления прошли успешно
             if (GoodDownload)
             {
-                Dispatcher.InvokeAsync(() =>
+                Dispatcher.Invoke(() =>
                 {
                     Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
                 });
             }
+        }
+        // Асинхронная логика обновления
+        public async Task<bool> StartUpdateAsync(List<RevitRibbonPanelCustom> listReload)
+        {
+            int progress = 0;
+
+            foreach (RevitRibbonPanelCustom revitPanel in listReload)
+            {
+                string message = await Task.Run(() => HotReload(revitPanel));
+                string assemblyPath = revitPanel.AssemlyPath;
+                string plugName = GetPluginName(assemblyPath);
+                progress++;
+
+                // Обновляем UI через Dispatcher.Invoke для немедленного отображения изменений
+                Dispatcher.Invoke(() =>
+                {
+                    ProgressBarDownload.Value = progress;
+                    TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
+                    TextBlockDownload.Text = $"{progress}/{listReload.Count + 1} загружено";
+                });
+
+                if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
+                {
+                    GoodDownload = false;
+                }
+            }
+
+            string messageMain = await Task.Run(() => ReloadMainPlug());
+
+            // После завершения обновления AnlaxBaseUpdater
+            Dispatcher.Invoke(() =>
+            {
+                ProgressBarDownload.Value = ProgressBarDownload.Maximum;
+                TextBlockDownload.Text = "Обновление завершено!";
+                TextBlockMessage.Text += $"Загрузка AnlaxBaseUpdater. {messageMain}\n";
+                TextBlockMessage.Text += "Все обновления завершены!\n";
+            });
+
+            // Закрываем окно через 2 секунды, если обновления прошли успешно
+            if (GoodDownload)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
+                });
+            }
+            return true;
         }
 
         private string ReloadMainPlug()

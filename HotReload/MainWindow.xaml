@@ -8,6 +8,7 @@
         ResizeMode="NoResize"
         Background="#F2F2F2"
         WindowStartupLocation="CenterScreen"
+        Topmost="True"
         Title="NewFillParameters" 
         Height="420"
         Width="550">
