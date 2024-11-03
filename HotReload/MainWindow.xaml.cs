@@ -37,12 +37,15 @@ namespace AnlaxRevitUpdate
                 return PluginAutoUpdateDirectory.Contains("AnlaxDev");
             }
         }
-
+        public string AssemblyFileVersion => FileVersionInfo
+.GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+.FileVersion;
         public MainWindow(List<RevitRibbonPanelCustom> listReload)
         {
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             GoodDownload = true;
             InitializeComponent();
+            VersionText.Text = AssemblyFileVersion;
             AutoUpdateBox.IsChecked = AuthSettings.Initialize().UpdateStart;
             // Настраиваем UI
             TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";

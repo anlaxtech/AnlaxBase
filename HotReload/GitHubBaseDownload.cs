@@ -22,6 +22,13 @@ namespace AnlaxBase.HotReload
             OwnerName = ownerName;
             RepposotoryName = repposotoryName;
             FolderName = folderName1;
+            bool endLimit = IsRateLimitExceededAsync().GetAwaiter().GetResult();
+            if (!endLimit)
+            {
+                var client = new GitHubClient(new Octokit.ProductHeaderValue(RepposotoryName + "-Updater"));
+                var releases = client.Repository.Release.GetAll(OwnerName, RepposotoryName).Result;
+                Release = releases.FirstOrDefault(r => r.Name == ReleaseTag);
+            }
             _client = new HttpClient
             {
                 Timeout = TimeSpan.FromSeconds(30) // Таймаут 30 секунд
@@ -43,15 +50,7 @@ namespace AnlaxBase.HotReload
 
         public DateTime DateRelease => Release?.PublishedAt?.DateTime ?? DateTime.MinValue;
 
-        public Release Release
-        {
-            get
-            {
-                var client = new GitHubClient(new Octokit.ProductHeaderValue(RepposotoryName + "-Updater"));
-                var releases = client.Repository.Release.GetAll(OwnerName, RepposotoryName).Result;
-                return releases.FirstOrDefault(r => r.Name == ReleaseTag);
-            }
-        }
+        public Release Release {  get; }
         public string CurrentVersion
         {
             get
@@ -60,14 +59,10 @@ namespace AnlaxBase.HotReload
                     return "1.0.0";
 
                 var versionInfo = FileVersionInfo.GetVersionInfo(AssemlyPath);
-                string version = versionInfo.FileVersion;
+                // Преобразуем версию в формат 1.1.2
+                string formattedVersion = $"{versionInfo.ProductMajorPart}.{versionInfo.ProductMinorPart}.{versionInfo.ProductBuildPart}";
 
-                // Преобразуем версию в формат 2022.1.1.2
-                string formattedVersion = $"{versionInfo.ProductMajorPart}.{versionInfo.ProductMinorPart}.{versionInfo.ProductBuildPart}.{versionInfo.ProductPrivatePart}";
-
-                // Убираем первые четыре знака и точку
-                string result = formattedVersion.Substring(5);
-                return result;
+                return formattedVersion;
             }
         }
 
