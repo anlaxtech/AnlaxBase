@@ -389,11 +389,11 @@ namespace AnlaxBase
                     {
                         // Ищем все типы в сборке
                         var typeStart = assemblyDefinition.MainModule.Types
-                            .FirstOrDefault(t => t.BaseType != null && t.BaseType.FullName == typeof(ApplicationStartAnlax).FullName);
+                            .FirstOrDefault(t => t.BaseType != null && t.BaseType.FullName == typeof(IApplicationStartAnlax).FullName);
 
                         if (typeStart != null)
                         {
-                            PackageLogManager.LogInfo("ApplicationStartAnlax найден в " + dll);
+                            PackageLogManager.LogInfo("IApplicationStartAnlax найден в " + dll);
                             // Если тип найден, загружаем сборку
                             var assemblyBytes = File.ReadAllBytes(dll);
                             Assembly assembly = Assembly.Load(assemblyBytes);
@@ -421,25 +421,13 @@ namespace AnlaxBase
 
                             if (runtimeType != null)
                             {
-                                // Ищем метод "GetRevitRibbonPanelCustom"
-                                var InitMethod = runtimeType.GetMethod("Init");
-
-                                if (InitMethod != null)
-                                {
                                     object instance = Activator.CreateInstance(runtimeType);
                                     // Создаем экземпляр класса
-                                    var invokeMethod = InitMethod.Invoke(instance,new object[]
-                                    {
-            uiappStart,     // UIControlledApplication параметр
-            dll,            // PathAssembly параметр
-            TabName,        // TabName параметр
-            assembly        // Assembly параметр
-                                    });
-
                                     if (instance != null)
                                     {
-                                        // Ищем метод "GetRevitRibbonPanelCustom"
-                                        var onStartupMethod = runtimeType.GetMethod("GetRevitRibbonPanelCustom");
+                                    AnlaxApplicationInfo anlaxApplicationInfo = new AnlaxApplicationInfo(uiappStart, dll, TabName, assembly);
+                                    // Ищем метод "GetRevitRibbonPanelCustom"
+                                    var onStartupMethod = runtimeType.GetMethod("GetRevitRibbonPanelCustom");
 
                                         if (onStartupMethod != null)
                                         {
@@ -474,7 +462,7 @@ namespace AnlaxBase
                                             PackageLogManager.LogError("Метод GetRevitRibbonPanelCustom не найден.");
                                         }
                                     }
-                                }
+                                
                                 else
                                 {
                                     PackageLogManager.LogError("Конструктор с требуемыми параметрами не найден.");
