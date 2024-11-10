@@ -38,7 +38,7 @@ namespace AnlaxBase
                     //Выбираем класс.
                     if (objType.IsClass)
                     {
-                        if (objType.IsSubclassOf(typeof(ApplicationStartAnlax)))
+                        if (objType.IsSubclassOf(typeof(IApplicationStartAnlax)))
                         {
                             // Проверка на наличие статического поля UIControlledApplicationBase.
                             FieldInfo fieldInfo = objType.GetField("UIControlledApplicationBase",

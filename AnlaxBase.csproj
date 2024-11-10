@@ -35,8 +35,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyFileVersion>1.1.10</AssemblyFileVersion>
-    <Version>$(RevitVersion).1.1.10</Version>
+    <AssemblyFileVersion>1.2.0</AssemblyFileVersion>
+    <Version>$(RevitVersion).1.2.0</Version>
   </PropertyGroup>
   
   <PropertyGroup>

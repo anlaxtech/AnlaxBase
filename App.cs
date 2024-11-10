@@ -389,8 +389,7 @@ namespace AnlaxBase
                     using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(dll))
                     {
                         // Ищем все типы в сборке
-                        var typeStart = assemblyDefinition.MainModule.Types
-                            .FirstOrDefault(t => t.BaseType != null && t.BaseType.FullName == typeof(IApplicationStartAnlax).FullName);
+                        var typeStart = assemblyDefinition.MainModule.Types.FirstOrDefault(t => t.Interfaces.Any(i => i.InterfaceType.FullName == typeof(IApplicationStartAnlax).FullName));
 
                         if (typeStart != null)
                         {
