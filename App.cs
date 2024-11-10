@@ -26,6 +26,7 @@ using System.Windows.Threading;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using AnlaxBimManager;
+using System.Windows.Input;
 
 namespace AnlaxBase
 {
@@ -430,10 +431,11 @@ namespace AnlaxBase
                                     var onStartupMethod = runtimeType.GetMethod("GetRevitRibbonPanelCustom");
 
                                         if (onStartupMethod != null)
-                                        {
-                                            // Вызов метода "GetRevitRibbonPanelCustom"
-                                            RevitRibbonPanelCustom revitRibbonPanelCustom =
-                                                (RevitRibbonPanelCustom)onStartupMethod.Invoke(instance, new object[] anlaxApplicationInfo);
+                                    {
+
+                                        // Вызов метода "GetRevitRibbonPanelCustom"
+                                        RevitRibbonPanelCustom revitRibbonPanelCustom =
+                                                (RevitRibbonPanelCustom)onStartupMethod.Invoke(instance, new object[] { anlaxApplicationInfo });
 
                                             if (revitRibbonPanelCustom != null)
                                             {
