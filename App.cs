@@ -433,7 +433,7 @@ namespace AnlaxBase
                                         {
                                             // Вызов метода "GetRevitRibbonPanelCustom"
                                             RevitRibbonPanelCustom revitRibbonPanelCustom =
-                                                (RevitRibbonPanelCustom)onStartupMethod.Invoke(instance, null);
+                                                (RevitRibbonPanelCustom)onStartupMethod.Invoke(instance, new object[] anlaxApplicationInfo);
 
                                             if (revitRibbonPanelCustom != null)
                                             {
