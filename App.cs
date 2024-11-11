@@ -52,7 +52,7 @@ namespace AnlaxBase
                 {
                     return false;
                 }
-                if (TabName.Contains("Anlax dev"))
+                if (TabName.ToLower().Contains("dev"))
                 {
                     return true;
                 }
@@ -119,7 +119,7 @@ namespace AnlaxBase
                 string result = NameClass.Substring(index + 1);
                 if (result == "HotLoad")
                 {
-                    RemoveItem(TabName, "Настройка плагина", comboBoxName);
+                    RemoveItem(TabName, SettingPanelName, comboBoxName);
                     comboBoxCountReload++;
                     CreateChoosenBox();
                     foreach (var panelName in revitRibbonPanelCustoms)
@@ -162,7 +162,7 @@ namespace AnlaxBase
                     LastAssembly = revitRibbonPanelCustom.AssemblyLoad;
                     if (!string.IsNullOrEmpty(LastNameClass) && LastAssembly != null)
                     {
-                        string empty2 = $"CustomCtrl_%CustomCtrl_%{TabName}%Настройка плагина%EmptyCommand";
+                        string empty2 = $"CustomCtrl_%CustomCtrl_%{TabName}%{SettingPanelName}%EmptyCommand";
                         RevitCommandId id_addin_button_cmd = RevitCommandId.LookupCommandId(empty2);
                         UIApplicationCurrent.PostCommand(id_addin_button_cmd);
                     }
@@ -255,7 +255,17 @@ namespace AnlaxBase
 
             return null;
         }
-
+        public string SettingPanelName
+        {
+            get
+            {
+                if (IsDebug)
+                {
+                    return "Настройка плагина dev";
+                }
+                return "Настройка Anlax";
+            }
+        }
         public Result OnStartup(UIControlledApplication application)
         {
             application.ControlledApplication.DocumentOpened += ControlledApplication_DocumentOpened;
@@ -265,17 +275,30 @@ namespace AnlaxBase
             pluginDirectory = Path.GetDirectoryName(assemblyLocation);
             LoadDependentAssemblies();
             uiappStart = application;
-            AuthSettings auth = AuthSettings.Initialize(true);
-            auth.Uiapp = uiappStart;
-            AutoUpdateStart = auth.UpdateStart;
-            TabName = auth.TabName;
+            if (assemblyLocation.Contains("AnlaxBaseDev"))
+            {
+                AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
+                auth.Uiapp = uiappStart;
+                AutoUpdateStart = auth.UpdateStart;
+                TabName = auth.TabName;
+            }
+            else
+            {
+                AuthSettings auth = AuthSettings.Initialize(true);
+
+                auth.Uiapp = uiappStart;
+                AutoUpdateStart = auth.UpdateStart;
+                TabName = auth.TabName;
+            }
+
+
             SubscribeOnButtonCliks();
             try
             {
                 application.CreateRibbonTab(TabName);
             }
             catch { }
-            ribbonPanelBase = application.CreateRibbonPanel(TabName, "Настройка плагина");
+            ribbonPanelBase = application.CreateRibbonPanel(TabName, SettingPanelName);
             PushButtonData pushButtonData = new PushButtonData(nameof(OpenWebHelp), "База\nзнаний", assemblyLocation, typeof(OpenWebHelp).FullName);
             pushButtonData.LargeImage = new BitmapImage(new Uri(@"/AnlaxBase;component/Icons/Day - Knowledge base.png", UriKind.RelativeOrAbsolute));
             ribbonPanelBase.AddItem(pushButtonData);
@@ -345,7 +368,7 @@ namespace AnlaxBase
                     ribboRevit.Visible = true;
                     continue;
                 }
-                if (ribboRevit.Name != "Настройка плагина" && ribboRevit.Name != comboBox.Current.ItemText)
+                if (ribboRevit.Name != SettingPanelName && ribboRevit.Name != comboBox.Current.ItemText)
                 {
                     ribboRevit.Visible = false;
                 }

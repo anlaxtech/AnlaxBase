@@ -33,7 +33,9 @@
     <RevitVersion>2025</RevitVersion>
     <TargetFramework>net8.0-windows</TargetFramework>
   </PropertyGroup>
-
+  <PropertyGroup Condition="$(Configuration.Contains('Debug'))">
+    <AssemblyName>$(AssemblyName)Dev</AssemblyName>
+  </PropertyGroup>
   <PropertyGroup>
     <AssemblyFileVersion>1.2.0</AssemblyFileVersion>
     <Version>$(RevitVersion).1.2.0</Version>
