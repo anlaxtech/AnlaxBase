@@ -37,8 +37,8 @@
     <AssemblyName>$(AssemblyName)Dev</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyFileVersion>1.2.0</AssemblyFileVersion>
-    <Version>$(RevitVersion).1.2.0</Version>
+    <AssemblyFileVersion>1.2.1</AssemblyFileVersion>
+    <Version>$(RevitVersion).1.2.1</Version>
   </PropertyGroup>
   
   <PropertyGroup>
