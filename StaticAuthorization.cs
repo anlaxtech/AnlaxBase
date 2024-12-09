@@ -10,7 +10,7 @@ namespace AnlaxBase
     {
         private static int _numberLiscence = 0;
         public static string ExperationDate { get; set; }
-        public static void SetLiscence (int number)
+        internal static void SetLiscence (int number)
         {
             _numberLiscence = number;
         }

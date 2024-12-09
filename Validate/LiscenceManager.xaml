@@ -52,7 +52,7 @@
             TextWrapping="Wrap"
             VerticalAlignment="Top"
             Width="305"
-            Height="20"><Run Language="ru-ru" Text="Менеджер лицензий"/></TextBlock>
+            Height="20"><Run Language="ru-ru" Text="МЕНЕДЖЕР ЛИЦЕНЗИЙ"/></TextBlock>
         <Button x:Name="CloseButton" Content="Button" HorizontalAlignment="Right" VerticalAlignment="Top" Style="{StaticResource CloseButton}" Click="CloseButton_Click" />
         <TextBlock x:Name="NumberLiscence" Margin="10,209,10,0"
             TextWrapping="Wrap"
@@ -74,12 +74,22 @@
             HorizontalAlignment="Left"
             Margin="10,238,0,0"
             VerticalAlignment="Top" Height="19" Width="148" ><Run Language="ru-ru" Text="Срок действия"/></TextBlock>
-        <DataGrid d:ItemsSource="{d:SampleData ItemCount=5}" Margin="10,365,10,50"/>
+        <DataGrid x:Name="LiscenceDataGrid"
+                  AutoGenerateColumns="False"
+                  ItemsSource="{Binding Liscences}"
+                  IsReadOnly="True" Margin="10,368,10,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Номер лицензии" Binding="{Binding NumLiscence, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                <DataGridTextColumn Header="Дата выдачи" Binding="{Binding DataofIssie, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                <DataGridTextColumn Header="Дата окончания" Binding="{Binding Expirationdate, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                <DataGridTextColumn Header="Пользователь" Binding="{Binding UserName, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
         <Button Content="ИФОРМАЦИЯ О ЛИЦЕНЗИЯХ"
             Margin="10,326,10,0"
             Style="{StaticResource StartButton}"
             Command="{Binding LiscenceInfo}"
-            VerticalAlignment="Top" Click="Button_Click"
+            VerticalAlignment="Top"
                 />
 
     </Grid>
