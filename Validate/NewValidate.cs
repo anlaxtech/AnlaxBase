@@ -26,6 +26,8 @@ namespace AnlaxBase.Validate
 
         private string scheme = "public";
 
+        public string Expirationdate {  get; set; }
+
         private string _tableName
         {
             get
@@ -52,7 +54,7 @@ namespace AnlaxBase.Validate
         }
         public bool CheckLicenseSilence()
         {
-            if (AuthSettings.Initialize().NumberLiscence > 0)
+            if (AuthSettingsDev.Initialize().NumberLiscence > 0)
             {
                 return true;
             }
@@ -72,7 +74,7 @@ namespace AnlaxBase.Validate
             {
                 return false;
             }
-            AuthSettings.Initialize().NumberLiscence = num;
+            AuthSettingsDev.Initialize().NumberLiscence = num;
             StaticAuthorization.SetLiscence(num);
             return true;
         }
@@ -119,12 +121,12 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView = new AuthViewNew();
                 authView.GreetingsBlock.Text = "Я Вас категорически приветствую. Введите логин и пароль.";
                 authView.ShowDialog();
-                _user = AuthSettings.Initialize().Login;
-                _password = AuthSettings.Initialize().Password;
+                _user = AuthSettingsDev.Initialize().Login;
+                _password = AuthSettingsDev.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
             }
 
-            if (AuthSettings.Initialize().NumberLiscence > 0)
+            if (StaticAuthorization.GetLiscence() > 0)
             {
                 return true;
             }
@@ -134,8 +136,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView2 = new AuthViewNew();
                 authView2.GreetingsBlock.Text = "В системе не задан логин или пароль. Введите логин или пароль в форме ниже.Тетовая версия работает до 50 элементов заданий и отверстий";
                 authView2.ShowDialog();
-                _user = AuthSettings.Initialize().Login;
-                _password = AuthSettings.Initialize().Password;
+                _user = AuthSettingsDev.Initialize().Login;
+                _password = AuthSettingsDev.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
             }
 
@@ -144,8 +146,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView3 = new AuthViewNew();
                 authView3.GreetingsBlock.Text = "Не удалось войти по логину и паролю. Повторите ввод";
                 authView3.ShowDialog();
-                _user = AuthSettings.Initialize().Login;
-                _password = AuthSettings.Initialize().Password;
+                _user = AuthSettingsDev.Initialize().Login;
+                _password = AuthSettingsDev.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
                 if (!CanConnectToDatabase())
                 {
@@ -159,8 +161,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView4 = new AuthViewNew();
                 authView4.GreetingsBlock.Text = "Все лицензии заняты. Повторите ввод";
                 authView4.ShowDialog();
-                _user = AuthSettings.Initialize().Login;
-                _password = AuthSettings.Initialize().Password;
+                _user = AuthSettingsDev.Initialize().Login;
+                _password = AuthSettingsDev.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
                 if (!CheckAvailableLicense())
                 {
@@ -180,46 +182,11 @@ namespace AnlaxBase.Validate
                 MessageBox.Show("Активирована лицензия с номером "+ num);
             }    
 
-            AuthSettings.Initialize().NumberLiscence = num;
+            AuthSettingsDev.Initialize().NumberLiscence = num;
             StaticAuthorization.SetLiscence(num);
             return true;
         }
 
-        public bool CheckAvailableLicense()
-        {
-            try
-            {
-                long num = 0L;
-                using (NpgsqlConnection npgsqlConnection = new NpgsqlConnection(_connectionString))
-                {
-                    npgsqlConnection.Open();
-                    string cmdText = "SELECT COUNT(*) FROM " + scheme + "." + _tableName + " WHERE userrevit IS NULL OR userrevit = ''";
-                    NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection);
-                    num = (long)npgsqlCommand.ExecuteScalar();
-                }
-
-                return num > 0;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public bool CanConnectToDatabase()
-        {
-            try
-            {
-                using NpgsqlConnection npgsqlConnection = new NpgsqlConnection(_connectionString);
-                npgsqlConnection.Open();
-                npgsqlConnection.Close();
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
 
         public int SetNumberLLiscence(string userInfo)
         {
@@ -228,6 +195,7 @@ namespace AnlaxBase.Validate
                 using NpgsqlConnection npgsqlConnection = new NpgsqlConnection(_connectionString);
                 npgsqlConnection.Open();
                 using NpgsqlTransaction npgsqlTransaction = npgsqlConnection.BeginTransaction();
+
                 string cmdText = "SELECT numberliscence FROM " + scheme + "." + _tableName + " WHERE userrevit = @userInfo";
                 using (NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection, npgsqlTransaction))
                 {
@@ -241,22 +209,30 @@ namespace AnlaxBase.Validate
                     }
                 }
 
-                string cmdText2 = "SELECT numberliscence FROM " + scheme + "." + _tableName + " WHERE userrevit IS NULL OR LENGTH(userrevit) < 1 ORDER BY numberliscence LIMIT 1 FOR UPDATE";
+                string cmdText2 = "SELECT numberliscence, expirationdate FROM " + scheme + "." + _tableName + " WHERE userrevit IS NULL OR LENGTH(userrevit) < 1 ORDER BY numberliscence LIMIT 1 FOR UPDATE";
                 using NpgsqlCommand npgsqlCommand2 = new NpgsqlCommand(cmdText2, npgsqlConnection, npgsqlTransaction);
-                object obj2 = npgsqlCommand2.ExecuteScalar();
-                if (obj2 != null)
+                using (NpgsqlDataReader reader = npgsqlCommand2.ExecuteReader())
                 {
-                    int num = (int)obj2;
-                    string cmdText3 = "UPDATE " + scheme + "." + _tableName + " SET userrevit = @userInfo WHERE numberliscence = @numberLiscence";
-                    using (NpgsqlCommand npgsqlCommand3 = new NpgsqlCommand(cmdText3, npgsqlConnection, npgsqlTransaction))
+                    if (reader.Read())
                     {
-                        npgsqlCommand3.Parameters.AddWithValue("@userInfo", userInfo);
-                        npgsqlCommand3.Parameters.AddWithValue("@numberLiscence", num);
-                        npgsqlCommand3.ExecuteNonQuery();
-                    }
+                        int num = reader.GetInt32(reader.GetOrdinal("numberliscence"));
+                        Expirationdate = reader.IsDBNull(reader.GetOrdinal("expirationdate"))
+                            ? null
+                            : reader.GetString(reader.GetOrdinal("expirationdate"));
+                        StaticAuthorization.ExperationDate = Expirationdate;
+                        reader.Close();
 
-                    npgsqlTransaction.Commit();
-                    return num;
+                        string cmdText3 = "UPDATE " + scheme + "." + _tableName + " SET userrevit = @userInfo WHERE numberliscence = @numberLiscence";
+                        using (NpgsqlCommand npgsqlCommand3 = new NpgsqlCommand(cmdText3, npgsqlConnection, npgsqlTransaction))
+                        {
+                            npgsqlCommand3.Parameters.AddWithValue("@userInfo", userInfo);
+                            npgsqlCommand3.Parameters.AddWithValue("@numberLiscence", num);
+                            npgsqlCommand3.ExecuteNonQuery();
+                        }
+
+                        npgsqlTransaction.Commit();
+                        return num;
+                    }
                 }
 
                 npgsqlTransaction.Rollback();
@@ -276,8 +252,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView = new AuthViewNew();
                 authView.GreetingsBlock.Text = "Не удалось войти по логину и паролю. Повторите ввод";
                 authView.ShowDialog();
-                _user = AuthSettings.Initialize().Login;
-                _password = AuthSettings.Initialize().Password;
+                _user = AuthSettingsDev.Initialize().Login;
+                _password = AuthSettingsDev.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
                 if (!CanConnectToDatabase())
                 {
@@ -300,7 +276,7 @@ namespace AnlaxBase.Validate
                     {
                         npgsqlTransaction.Commit();
                         MessageBox.Show("Лицензия успешно освобождена.");
-                        AuthSettings.Initialize().NumberLiscence = 0;
+                        AuthSettingsDev.Initialize().NumberLiscence = 0;
                         return true;
                     }
 
@@ -323,7 +299,7 @@ namespace AnlaxBase.Validate
                 {
                     npgsqlTransaction2.Commit();
                     MessageBox.Show("Лицензия успешно освобождена.");
-                    AuthSettings.Initialize().NumberLiscence = 0;
+                    AuthSettingsDev.Initialize().NumberLiscence = 0;
                     return true;
                 }
 
@@ -340,7 +316,7 @@ namespace AnlaxBase.Validate
 
         public bool ReleaseSilenceLicense()
         {
-            int numberLiscence = AuthSettings.Initialize().NumberLiscence;
+            int numberLiscence = AuthSettingsDev.Initialize().NumberLiscence;
             if (!CanConnectToDatabase())
             {
                 return false;
@@ -358,7 +334,7 @@ namespace AnlaxBase.Validate
                 if (num > 0)
                 {
                     npgsqlTransaction.Commit();
-                    AuthSettings.Initialize().NumberLiscence = 0;
+                    AuthSettingsDev.Initialize().NumberLiscence = 0;
                     return true;
                 }
 

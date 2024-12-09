@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace AnlaxBase
 {
@@ -17,13 +18,13 @@ namespace AnlaxBase
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            AuthSettings auth =AuthSettings.Initialize(true);
+            AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
             Document currentDoc = commandData.Application.ActiveUIDocument.Document;
             int numLiscence=StaticAuthorization.GetLiscence();
             if (numLiscence == 0 )
             {
                 NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password, currentDoc);
-                postgresSQLValidate.CheckLicense(true);
+                bool trial=postgresSQLValidate.CheckLicense();
             }
             else
             {

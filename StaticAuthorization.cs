@@ -9,6 +9,7 @@ namespace AnlaxBase
     public static class StaticAuthorization
     {
         private static int _numberLiscence = 0;
+        public static string ExperationDate { get; set; }
         public static void SetLiscence (int number)
         {
             _numberLiscence = number;

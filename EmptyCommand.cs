@@ -18,11 +18,11 @@ namespace AnlaxBase
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            if (StaticAuthorization.GetLiscence()==0)
+            if (StaticAuthorization.GetLiscence() == 0)
             {
                 AuthSettings auth = AuthSettings.Initialize(true);
-                NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password, currentDoc);
-                postgresSQLValidate.CheckLicense(true);
+                NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password);
+                postgresSQLValidate.CheckLicenseSilence();
             }
             if (App.LastAssembly!=null && !string.IsNullOrEmpty(App.LastNameClass))
             {

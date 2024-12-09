@@ -63,7 +63,7 @@ namespace AnlaxBase
                 DirectoryInfo parentDirectory = Directory.GetParent(directoryPath);
                 AssemblyBaseLocation = parentDirectory.FullName;
             }
-            string settingsFilePath = Path.Combine(AssemblyBaseLocation, "AuthSettingsDev.json");
+            string settingsFilePath = Path.Combine(AssemblyBaseLocation, "BaseSettings.json");
             if (settings == null)
             {
 
@@ -98,7 +98,7 @@ namespace AnlaxBase
         public void SaveJson()
         {
             string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-            string settingsFilePath = Path.Combine(Path.GetDirectoryName(assemblyLocation), "AuthSettingsDev.json");
+            string settingsFilePath = Path.Combine(Path.GetDirectoryName(assemblyLocation), "BaseSettings.json");
             string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
             // Write JSON string to file
             try
