@@ -1,4 +1,5 @@
-﻿using AnlaxPackage;
+﻿using AnlaxBase.Validate;
+using AnlaxPackage;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -17,6 +18,12 @@ namespace AnlaxBase
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
+            if (StaticAuthorization.GetLiscence()==0)
+            {
+                AuthSettings auth = AuthSettings.Initialize(true);
+                NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password, currentDoc);
+                postgresSQLValidate.CheckLicense(true);
+            }
             if (App.LastAssembly!=null && !string.IsNullOrEmpty(App.LastNameClass))
             {
                 InvokeRevitCommand(App.LastNameClass, commandData, ref message, elements, App.LastAssembly);
