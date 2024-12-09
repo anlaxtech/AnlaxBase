@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Autodesk.Revit.DB;
+using System.Collections.ObjectModel;
 
 namespace AnlaxBase.Validate
 {
@@ -186,7 +187,44 @@ namespace AnlaxBase.Validate
             StaticAuthorization.SetLiscence(num);
             return true;
         }
+        public ObservableCollection<ModelLiscence> GetAllLiscences()
+        {
+            ObservableCollection<ModelLiscence> liscences = new ObservableCollection<ModelLiscence>();
 
+            try
+            {
+                using NpgsqlConnection npgsqlConnection = new NpgsqlConnection(_connectionString);
+                npgsqlConnection.Open();
+
+                string cmdText = "SELECT numberliscence, datofissue, expirationdate, userrevit FROM " + scheme + "." + _tableName;
+
+                using (NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection))
+                using (NpgsqlDataReader reader = npgsqlCommand.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int numberLiscence = reader.GetInt32(reader.GetOrdinal("numberliscence"));
+                        string dataOfIssue = reader.IsDBNull(reader.GetOrdinal("datofissue"))
+                            ? string.Empty
+                            : reader.GetString(reader.GetOrdinal("datofissue"));
+                        string expirationDate = reader.IsDBNull(reader.GetOrdinal("expirationdate"))
+                            ? string.Empty
+                            : reader.GetString(reader.GetOrdinal("expirationdate"));
+                        string userName = reader.IsDBNull(reader.GetOrdinal("userrevit"))
+                            ? string.Empty
+                            : reader.GetString(reader.GetOrdinal("userrevit"));
+
+                        liscences.Add(new ModelLiscence(dataOfIssue, expirationDate, userName, numberLiscence));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка: " + ex.Message);
+            }
+
+            return liscences;
+        }
 
         public int SetNumberLLiscence(string userInfo)
         {

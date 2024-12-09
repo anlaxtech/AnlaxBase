@@ -1,6 +1,7 @@
 ﻿using AnlaxPackage;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,8 @@ namespace AnlaxBase.Validate
     {
         private AuthSettingsDev auth;
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public ObservableCollection<ModelLiscence> Liscences { get; set; }
         public void OnPropertyChanged([CallerMemberName] string prop = "")
         {
             if (PropertyChanged != null)
@@ -48,7 +51,8 @@ namespace AnlaxBase.Validate
                 return liscenceInfo ??
                   (liscenceInfo = new RelayCommand(obj =>
                   {
-                      MessageBox.Show("На этапе разработки");
+                      Liscences = NewValidateManager.GetAllLiscences();
+                      OnPropertyChanged(nameof(Liscences));
                   }));
             }
         }

@@ -18,7 +18,6 @@ namespace AnlaxBase
         protected AuthSettingsDev() { }
         public static string AssemblyBaseLocation { get; set; }
 
-
         public string AssemblyLocation
         {
             get
@@ -126,7 +125,7 @@ namespace AnlaxBase
         {
             Login = "Введите логин";
             Password = "Введите пароль";
-            TabName = "Anlax Dev";
+            TabName = "Anlax";
             URLBaseKnowledge = "https://anlax.org/technology/knowledge-base/";
             UpdateStart = true;
 
