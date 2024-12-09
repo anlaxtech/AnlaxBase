@@ -21,13 +21,13 @@ namespace AnlaxBase.Validate
     {
         public LiscenceManager()
         {
+            LiscenceManagerViewModel liscenceManagerViewModel = new LiscenceManagerViewModel();
+            DataContext = liscenceManagerViewModel;
             InitializeComponent();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            StaticAuthorization.SetLiscence(0);
-            AuthSettingsDev.Initialize().NumberLiscence = 0;
             Close();
         }
 
