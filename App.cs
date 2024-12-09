@@ -102,7 +102,7 @@ namespace AnlaxBase
         {
             try
             {
-                AuthSettings auth = AuthSettings.Initialize(true);
+                AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
                 NewValidate newValidate = new NewValidate(auth.Login, auth.Password);
                 newValidate.ReleaseSilenceLicense();
                 PackageLogManager.ClearLogFile();

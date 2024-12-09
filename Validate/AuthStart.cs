@@ -24,7 +24,7 @@ namespace AnlaxBase
             if (numLiscence == 0 )
             {
                 NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password, currentDoc);
-                bool trial=postgresSQLValidate.CheckLicense();
+                bool trial=postgresSQLValidate.CheckLicense(true);
             }
             else
             {
