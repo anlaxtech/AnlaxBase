@@ -27,6 +27,7 @@ using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using AnlaxBimManager;
 using System.Windows.Input;
+using AnlaxBase.Validate;
 
 namespace AnlaxBase
 {
@@ -101,6 +102,9 @@ namespace AnlaxBase
         {
             try
             {
+                AuthSettings auth = AuthSettings.Initialize(true);
+                NewValidate newValidate = new NewValidate(auth.Login, auth.Password);
+                newValidate.ReleaseSilenceLicense();
                 PackageLogManager.ClearLogFile();
                 LaunchAnlaxAutoUpdate();
             }

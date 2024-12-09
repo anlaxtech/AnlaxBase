@@ -1,4 +1,5 @@
-﻿using AnlaxPackage;
+﻿using AnlaxBase.Validate;
+using AnlaxPackage;
 using AnlaxPackage.Auth;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
@@ -18,8 +19,18 @@ namespace AnlaxBase
         {
             AuthSettings auth =AuthSettings.Initialize(true);
             Document currentDoc = commandData.Application.ActiveUIDocument.Document;
-            PostgresSQLValidate postgresSQLValidate = new PostgresSQLValidate(auth.Login, auth.Password, currentDoc);
-            postgresSQLValidate.CheckLicense(true);
+            int numLiscence=StaticAuthorization.GetLiscence();
+            if (numLiscence == 0 )
+            {
+                NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password, currentDoc);
+                postgresSQLValidate.CheckLicense(true);
+            }
+            else
+            {
+                LiscenceManager liscenceManager = new LiscenceManager();
+                liscenceManager.ShowDialog();
+            }
+
             return Result.Succeeded;
         }
     }
