@@ -105,7 +105,7 @@ namespace AnlaxBase
                 AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
                 NewValidate newValidate = new NewValidate(auth.Login, auth.Password);
                 newValidate.ReleaseSilenceLicense();
-                PackageLogManager.ClearLogFile();
+                AnlaxBaseLogManager.ClearLogFile();
                 LaunchAnlaxAutoUpdate();
             }
             catch (Exception ex)
@@ -356,13 +356,13 @@ namespace AnlaxBase
             if (!string.IsNullOrEmpty(_port)) // Если ревит запушен вручную. То плагин не запускаем
             {
                 Task.Delay(4000);
-                PackageLogManager.LogInfo("Автозапуск с параметром"+ _port);
+                AnlaxBaseLogManager.LogInfo("Автозапуск с параметром"+ _port);
                 RevitTask _revitTask = new RevitTask();
                 var task = _revitTask
         .Run((uiapp) =>
         {
             string decodedPath = Uri.UnescapeDataString(_port);
-            PackageLogManager.LogInfo("Путь к файлу json" + _port);
+            AnlaxBaseLogManager.LogInfo("Путь к файлу json" + _port);
             ExportByJson(uiapp, decodedPath);
 
         });
@@ -452,7 +452,7 @@ namespace AnlaxBase
         {
             // Шаг 1: Получить все загруженные сборки
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            PackageLogManager.LogInfo("Получили все сборки");
+            AnlaxBaseLogManager.LogInfo("Получили все сборки");
             // Шаг 2: Найти сборку AnlaxBimManager
             var targetAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AnlaxBimManager");
             if (targetAssembly == null)
@@ -460,7 +460,7 @@ namespace AnlaxBase
                 TaskDialog.Show("Error", "Assembly 'AnlaxBimManager' not found.");
                 return Result.Failed;
             }
-            PackageLogManager.LogInfo("Нашли AnlaxBimManager");
+            AnlaxBaseLogManager.LogInfo("Нашли AnlaxBimManager");
             // Шаг 3: Найти класс StartMenuAuto
             var targetType = targetAssembly.GetType("AnlaxBimManager.StartMenuAuto");
             if (targetType == null)
@@ -468,7 +468,7 @@ namespace AnlaxBase
                 TaskDialog.Show("Error", "Class 'StartMenuAuto' not found in assembly 'AnlaxBimManager'.");
                 return Result.Failed;
             }
-            PackageLogManager.LogInfo("Нашли StartMenuAuto");
+            AnlaxBaseLogManager.LogInfo("Нашли StartMenuAuto");
             // Шаг 4: Найти метод Execute
             var targetMethod = targetType.GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance);
             if (targetMethod == null)
@@ -476,10 +476,10 @@ namespace AnlaxBase
                 TaskDialog.Show("Error", "Method 'Execute' not found in class 'StartMenuAuto'.");
                 return Result.Failed;
             }
-            PackageLogManager.LogInfo("Нашли Метод Execute");
+            AnlaxBaseLogManager.LogInfo("Нашли Метод Execute");
             // Шаг 5: Создать экземпляр класса StartMenuAuto
             var targetInstance = Activator.CreateInstance(targetType);
-            PackageLogManager.LogInfo("Создали эксземпляр метода");
+            AnlaxBaseLogManager.LogInfo("Создали эксземпляр метода");
             if (targetInstance == null)
             {
                 TaskDialog.Show("Error", "Failed to create instance of 'StartMenuAuto'.");
@@ -489,9 +489,9 @@ namespace AnlaxBase
             // Шаг 6: Вызвать метод Execute
             try
             {
-                PackageLogManager.LogInfo("Начинам Invoke метода с параметрами: uiapp" + uiapp.ToString()+" json settings: "+ jsonSettings);
+                AnlaxBaseLogManager.LogInfo("Начинам Invoke метода с параметрами: uiapp" + uiapp.ToString()+" json settings: "+ jsonSettings);
                 var result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings });
-                PackageLogManager.LogInfo("Заканчиваем Invoke метода");
+                AnlaxBaseLogManager.LogInfo("Заканчиваем Invoke метода");
                 if (result is Result executionResult)
                 {
                     return executionResult;
@@ -500,7 +500,7 @@ namespace AnlaxBase
             catch (Exception ex)
             {
                 TaskDialog.Show("Error", $"Exception occurred: {ex.Message}");
-                PackageLogManager.LogError("Error "+ $"Exception occurred: {ex.Message}");
+                AnlaxBaseLogManager.LogError("Error "+ $"Exception occurred: {ex.Message}");
                 return Result.Failed;
             }
 
@@ -513,7 +513,7 @@ namespace AnlaxBase
 
             // Рекурсивно ищем все файлы с расширением .dll
             var dllFiles = Directory.GetFiles(pluginDirectory, "*.dll", SearchOption.AllDirectories);
-            PackageLogManager.LogInfo("Найдено " + dllFiles.Length + " сборок");
+            AnlaxBaseLogManager.LogInfo("Найдено " + dllFiles.Length + " сборок");
             foreach (var dll in dllFiles)
             {
                 try
@@ -526,7 +526,7 @@ namespace AnlaxBase
 
                         if (typeStart != null)
                         {
-                            PackageLogManager.LogInfo("IApplicationStartAnlax найден в " + dll);
+                            AnlaxBaseLogManager.LogInfo("IApplicationStartAnlax найден в " + dll);
                             // Если тип найден, загружаем сборку
                             var assemblyBytes = File.ReadAllBytes(dll);
                             Assembly assembly = Assembly.Load(assemblyBytes);
@@ -542,7 +542,7 @@ namespace AnlaxBase
                                 // Логируем исключения загрузки типов
                                 foreach (var loaderException in ex.LoaderExceptions)
                                 {
-                                    PackageLogManager.LogInfo("Ошибка в считывании " + loaderException.Message);
+                                    AnlaxBaseLogManager.LogInfo("Ошибка в считывании " + loaderException.Message);
                                 }
 
                                 // Получаем уже загруженные типы
@@ -593,18 +593,18 @@ namespace AnlaxBase
                                         }
                                         else
                                         {
-                                            PackageLogManager.LogError("Метод GetRevitRibbonPanelCustom не найден.");
+                                            AnlaxBaseLogManager.LogError("Метод GetRevitRibbonPanelCustom не найден.");
                                         }
                                     }
                                 
                                 else
                                 {
-                                    PackageLogManager.LogError("Конструктор с требуемыми параметрами не найден.");
+                                    AnlaxBaseLogManager.LogError("Конструктор с требуемыми параметрами не найден.");
                                 }
                             }
                             else
                             {
-                                PackageLogManager.LogError($"Тип производного класса ApplicationStartAnlax не найден через рефлексию. Но найден через Mono.Cecil");
+                                AnlaxBaseLogManager.LogError($"Тип производного класса ApplicationStartAnlax не найден через рефлексию. Но найден через Mono.Cecil");
                             }
                         }
                     }
@@ -612,7 +612,7 @@ namespace AnlaxBase
                 catch (Exception ex)
                 {
                     // Логируем ошибки
-                    PackageLogManager.LogError($"Ошибка при обработке {dll}: {ex.Message}");
+                    AnlaxBaseLogManager.LogError($"Ошибка при обработке {dll}: {ex.Message}");
                 }
             }
 
