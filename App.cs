@@ -282,7 +282,6 @@ namespace AnlaxBase
             string[] args = Environment.GetCommandLineArgs();
             foreach (string arg in args)
             {
-                MessageBox.Show(arg);
                 if (arg.StartsWith("/path:", StringComparison.OrdinalIgnoreCase))
                 {
                     return arg.Substring("/path:".Length);
@@ -353,8 +352,10 @@ namespace AnlaxBase
                 revitRibbonPanelCustom1.CreateRibbonPanel(uiappStart);
             }
             string _port = GetPortFromCommandLineArguments();
+            
             if (!string.IsNullOrEmpty(_port)) // Если ревит запушен вручную. То плагин не запускаем
             {
+                Task.Delay(4000);
                 PackageLogManager.LogInfo("Автозапуск с параметром"+ _port);
                 RevitTask _revitTask = new RevitTask();
                 var task = _revitTask
