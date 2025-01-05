@@ -277,6 +277,18 @@ namespace AnlaxBase
                 return "Настройка Anlax";
             }
         }
+        private string GetPortFromCommandLineArguments()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            foreach (string arg in args)
+            {
+                if (arg.StartsWith("/path:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return arg.Substring("/path:".Length);
+                }
+            }
+            return null;
+        }
         public Result OnStartup(UIControlledApplication application)
         {
             application.ControlledApplication.DocumentOpened += ControlledApplication_DocumentOpened;
@@ -339,9 +351,33 @@ namespace AnlaxBase
             {
                 revitRibbonPanelCustom1.CreateRibbonPanel(uiappStart);
             }
+            string _port = GetPortFromCommandLineArguments();
+            if (!string.IsNullOrEmpty(_port)) // Если ревит запушен вручную. То плагин не запускаем
+            {
+                RevitTask _revitTask = new RevitTask();
+                var task = _revitTask
+        .Run((uiapp) =>
+        {
+            string decodedPath = Uri.UnescapeDataString(_port);
+            ExportByJson(uiapp, decodedPath);
+
+        });
+            }
+
             return Result.Succeeded;
         }
-
+        private string ExportByJson(UIApplication uiapp, string jsonSettings)
+        {
+            try
+            {
+                ExecuteAnlaxMethod(uiapp, jsonSettings);
+                return "успех";
+            }
+            catch (Exception ex)
+            {
+                return "ошибка";
+            }
+        }
         private void ControlledApplication_DocumentCreated(object sender, DocumentCreatedEventArgs e)
         {
             Document sa = e.Document;
@@ -406,8 +442,63 @@ namespace AnlaxBase
                     }
                 }
             }
-
         }
+
+        public static Result ExecuteAnlaxMethod(UIApplication uiapp, string jsonSettings)
+        {
+            // Шаг 1: Получить все загруженные сборки
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            // Шаг 2: Найти сборку AnlaxBimManager
+            var targetAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AnlaxBimManager");
+            if (targetAssembly == null)
+            {
+                TaskDialog.Show("Error", "Assembly 'AnlaxBimManager' not found.");
+                return Result.Failed;
+            }
+
+            // Шаг 3: Найти класс StartMenuAuto
+            var targetType = targetAssembly.GetType("AnlaxBimManager.StartMenuAuto");
+            if (targetType == null)
+            {
+                TaskDialog.Show("Error", "Class 'StartMenuAuto' not found in assembly 'AnlaxBimManager'.");
+                return Result.Failed;
+            }
+
+            // Шаг 4: Найти метод Execute
+            var targetMethod = targetType.GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance);
+            if (targetMethod == null)
+            {
+                TaskDialog.Show("Error", "Method 'Execute' not found in class 'StartMenuAuto'.");
+                return Result.Failed;
+            }
+
+            // Шаг 5: Создать экземпляр класса StartMenuAuto
+            var targetInstance = Activator.CreateInstance(targetType);
+            if (targetInstance == null)
+            {
+                TaskDialog.Show("Error", "Failed to create instance of 'StartMenuAuto'.");
+                return Result.Failed;
+            }
+
+            // Шаг 6: Вызвать метод Execute
+            try
+            {
+                var result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings });
+                if (result is Result executionResult)
+                {
+                    return executionResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                TaskDialog.Show("Error", $"Exception occurred: {ex.Message}");
+                return Result.Failed;
+            }
+
+            return Result.Failed;
+        }
+
         public List<string> FindDllsWithApplicationStart()
         {
             List<string> result = new List<string>();
