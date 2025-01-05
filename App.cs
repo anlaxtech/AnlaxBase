@@ -282,6 +282,7 @@ namespace AnlaxBase
             string[] args = Environment.GetCommandLineArgs();
             foreach (string arg in args)
             {
+                MessageBox.Show(arg);
                 if (arg.StartsWith("/path:", StringComparison.OrdinalIgnoreCase))
                 {
                     return arg.Substring("/path:".Length);
@@ -354,11 +355,13 @@ namespace AnlaxBase
             string _port = GetPortFromCommandLineArguments();
             if (!string.IsNullOrEmpty(_port)) // Если ревит запушен вручную. То плагин не запускаем
             {
+                PackageLogManager.LogInfo("Автозапуск с параметром"+ _port);
                 RevitTask _revitTask = new RevitTask();
                 var task = _revitTask
         .Run((uiapp) =>
         {
             string decodedPath = Uri.UnescapeDataString(_port);
+            PackageLogManager.LogInfo("Путь к файлу json" + _port);
             ExportByJson(uiapp, decodedPath);
 
         });
@@ -448,7 +451,7 @@ namespace AnlaxBase
         {
             // Шаг 1: Получить все загруженные сборки
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
+            PackageLogManager.LogInfo("Получили все сборки");
             // Шаг 2: Найти сборку AnlaxBimManager
             var targetAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AnlaxBimManager");
             if (targetAssembly == null)
@@ -456,7 +459,7 @@ namespace AnlaxBase
                 TaskDialog.Show("Error", "Assembly 'AnlaxBimManager' not found.");
                 return Result.Failed;
             }
-
+            PackageLogManager.LogInfo("Нашли AnlaxBimManager");
             // Шаг 3: Найти класс StartMenuAuto
             var targetType = targetAssembly.GetType("AnlaxBimManager.StartMenuAuto");
             if (targetType == null)
@@ -464,7 +467,7 @@ namespace AnlaxBase
                 TaskDialog.Show("Error", "Class 'StartMenuAuto' not found in assembly 'AnlaxBimManager'.");
                 return Result.Failed;
             }
-
+            PackageLogManager.LogInfo("Нашли StartMenuAuto");
             // Шаг 4: Найти метод Execute
             var targetMethod = targetType.GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance);
             if (targetMethod == null)
@@ -472,9 +475,10 @@ namespace AnlaxBase
                 TaskDialog.Show("Error", "Method 'Execute' not found in class 'StartMenuAuto'.");
                 return Result.Failed;
             }
-
+            PackageLogManager.LogInfo("Нашли Метод Execute");
             // Шаг 5: Создать экземпляр класса StartMenuAuto
             var targetInstance = Activator.CreateInstance(targetType);
+            PackageLogManager.LogInfo("Создали эксземпляр метода");
             if (targetInstance == null)
             {
                 TaskDialog.Show("Error", "Failed to create instance of 'StartMenuAuto'.");
@@ -484,7 +488,9 @@ namespace AnlaxBase
             // Шаг 6: Вызвать метод Execute
             try
             {
+                PackageLogManager.LogInfo("Начинам Invoke метода с параметрами: uiapp" + uiapp.ToString()+" json settings: "+ jsonSettings);
                 var result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings });
+                PackageLogManager.LogInfo("Заканчиваем Invoke метода");
                 if (result is Result executionResult)
                 {
                     return executionResult;
@@ -493,6 +499,7 @@ namespace AnlaxBase
             catch (Exception ex)
             {
                 TaskDialog.Show("Error", $"Exception occurred: {ex.Message}");
+                PackageLogManager.LogError("Error "+ $"Exception occurred: {ex.Message}");
                 return Result.Failed;
             }
 
