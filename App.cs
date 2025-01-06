@@ -277,7 +277,7 @@ namespace AnlaxBase
                 return "Настройка Anlax";
             }
         }
-        private string GetPortFromCommandLineArguments()
+        private string GetJsonFromCommandLineArguments()
         {
             string[] args = Environment.GetCommandLineArgs();
             foreach (string arg in args)
@@ -289,6 +289,19 @@ namespace AnlaxBase
             }
             return null;
         }
+        private string GetTaskId()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            foreach (string arg in args)
+            {
+                if (arg.StartsWith("/id:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return arg.Substring("/id:".Length);
+                }
+            }
+            return null;
+        }
+
         public Result OnStartup(UIControlledApplication application)
         {
             application.ControlledApplication.DocumentOpened += ControlledApplication_DocumentOpened;
@@ -351,19 +364,24 @@ namespace AnlaxBase
             {
                 revitRibbonPanelCustom1.CreateRibbonPanel(uiappStart);
             }
-            string _port = GetPortFromCommandLineArguments();
+            string jsonSettings = GetJsonFromCommandLineArguments();
             
-            if (!string.IsNullOrEmpty(_port)) // Если ревит запушен вручную. То плагин не запускаем
+            if (!string.IsNullOrEmpty(jsonSettings)) // Если ревит запушен вручную. То плагин не запускаем
             {
                 Task.Delay(4000);
-                AnlaxBaseLogManager.LogInfo("Автозапуск с параметром"+ _port);
+                AnlaxBaseLogManager.LogInfo("Автозапуск с параметром"+ jsonSettings);
                 RevitTask _revitTask = new RevitTask();
                 var task = _revitTask
         .Run((uiapp) =>
         {
-            string decodedPath = Uri.UnescapeDataString(_port);
-            AnlaxBaseLogManager.LogInfo("Путь к файлу json" + _port);
-            ExportByJson(uiapp, decodedPath);
+            string taskId = GetTaskId();
+            string decodedPath = Uri.UnescapeDataString(jsonSettings);
+            AnlaxBaseLogManager.LogInfo("Путь к файлу json: " + decodedPath);
+            string message = ExportByJson(uiapp, decodedPath);
+            // Записываем результат в файл
+            string resultFilePath = Path.Combine(Path.GetTempPath(), $"task_{taskId}_result.txt");
+            File.WriteAllText(resultFilePath, message);
+            Process.GetCurrentProcess().Kill();
 
         });
             }
@@ -374,12 +392,12 @@ namespace AnlaxBase
         {
             try
             {
-                ExecuteAnlaxMethod(uiapp, jsonSettings);
-                return "успех";
+                string message =ExecuteAnlaxMethod(uiapp, jsonSettings);
+                return message;
             }
             catch (Exception ex)
             {
-                return "ошибка";
+                return "Ошибка";
             }
         }
         private void ControlledApplication_DocumentCreated(object sender, DocumentCreatedEventArgs e)
@@ -448,7 +466,7 @@ namespace AnlaxBase
             }
         }
 
-        public static Result ExecuteAnlaxMethod(UIApplication uiapp, string jsonSettings)
+        public static string ExecuteAnlaxMethod(UIApplication uiapp, string jsonSettings)
         {
             // Шаг 1: Получить все загруженные сборки
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -457,24 +475,21 @@ namespace AnlaxBase
             var targetAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AnlaxBimManager");
             if (targetAssembly == null)
             {
-                TaskDialog.Show("Error", "Assembly 'AnlaxBimManager' not found.");
-                return Result.Failed;
+                return "Assembly 'AnlaxBimManager' not found.";
             }
             AnlaxBaseLogManager.LogInfo("Нашли AnlaxBimManager");
             // Шаг 3: Найти класс StartMenuAuto
             var targetType = targetAssembly.GetType("AnlaxBimManager.StartMenuAuto");
             if (targetType == null)
             {
-                TaskDialog.Show("Error", "Class 'StartMenuAuto' not found in assembly 'AnlaxBimManager'.");
-                return Result.Failed;
+                return "Class 'StartMenuAuto' not found in assembly 'AnlaxBimManager'.";
             }
             AnlaxBaseLogManager.LogInfo("Нашли StartMenuAuto");
             // Шаг 4: Найти метод Execute
             var targetMethod = targetType.GetMethod("Execute", BindingFlags.Public | BindingFlags.Instance);
             if (targetMethod == null)
             {
-                TaskDialog.Show("Error", "Method 'Execute' not found in class 'StartMenuAuto'.");
-                return Result.Failed;
+                return "Method 'Execute' not found in class 'StartMenuAuto'.";
             }
             AnlaxBaseLogManager.LogInfo("Нашли Метод Execute");
             // Шаг 5: Создать экземпляр класса StartMenuAuto
@@ -482,29 +497,25 @@ namespace AnlaxBase
             AnlaxBaseLogManager.LogInfo("Создали эксземпляр метода");
             if (targetInstance == null)
             {
-                TaskDialog.Show("Error", "Failed to create instance of 'StartMenuAuto'.");
-                return Result.Failed;
+                return "Failed to create instance of 'StartMenuAuto'.";
             }
 
             // Шаг 6: Вызвать метод Execute
             try
             {
                 AnlaxBaseLogManager.LogInfo("Начинам Invoke метода с параметрами: uiapp" + uiapp.ToString()+" json settings: "+ jsonSettings);
-                var result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings });
+                string result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings }) as string;
                 AnlaxBaseLogManager.LogInfo("Заканчиваем Invoke метода");
-                if (result is Result executionResult)
-                {
-                    return executionResult;
-                }
+                return result;
+
+
             }
             catch (Exception ex)
             {
                 TaskDialog.Show("Error", $"Exception occurred: {ex.Message}");
                 AnlaxBaseLogManager.LogError("Error "+ $"Exception occurred: {ex.Message}");
-                return Result.Failed;
+                return ("Error " + $"Exception occurred: {ex.Message}");
             }
-
-            return Result.Failed;
         }
 
         public List<string> FindDllsWithApplicationStart()
