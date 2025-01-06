@@ -377,10 +377,15 @@ namespace AnlaxBase
             string taskId = GetTaskId();
             string decodedPath = Uri.UnescapeDataString(jsonSettings);
             AnlaxBaseLogManager.LogInfo("Путь к файлу json: " + decodedPath);
-            string message = ExportByJson(uiapp, decodedPath);
+            string message = ExportByJson(uiapp, decodedPath, taskId);
             // Записываем результат в файл
-            string resultFilePath = Path.Combine(Path.GetTempPath(), $"task_{taskId}_result.txt");
-            File.WriteAllText(resultFilePath, message);
+            string tempBasePath = @"C:\ProgramData\Anlax\logExport\";
+            Directory.CreateDirectory(tempBasePath); // Убедимся, что папка существует
+            string resultFilePath = Path.Combine(tempBasePath, $"task_{taskId}_result.txt");
+            using (var writer = new StreamWriter(resultFilePath, append: true))
+            {
+                writer.WriteLine(message); // Запись с новой строки
+            }
             Process.GetCurrentProcess().Kill();
 
         });
@@ -388,11 +393,11 @@ namespace AnlaxBase
 
             return Result.Succeeded;
         }
-        private string ExportByJson(UIApplication uiapp, string jsonSettings)
+        private string ExportByJson(UIApplication uiapp, string jsonSettings,string taskId)
         {
             try
             {
-                string message =ExecuteAnlaxMethod(uiapp, jsonSettings);
+                string message =ExecuteAnlaxMethod(uiapp, jsonSettings, taskId);
                 return message;
             }
             catch (Exception ex)
@@ -466,7 +471,7 @@ namespace AnlaxBase
             }
         }
 
-        public static string ExecuteAnlaxMethod(UIApplication uiapp, string jsonSettings)
+        public static string ExecuteAnlaxMethod(UIApplication uiapp, string jsonSettings,string taskId)
         {
             // Шаг 1: Получить все загруженные сборки
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -504,7 +509,7 @@ namespace AnlaxBase
             try
             {
                 AnlaxBaseLogManager.LogInfo("Начинам Invoke метода с параметрами: uiapp" + uiapp.ToString()+" json settings: "+ jsonSettings);
-                string result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings }) as string;
+                string result = targetMethod.Invoke(targetInstance, new object[] { uiapp, jsonSettings, taskId }) as string;
                 AnlaxBaseLogManager.LogInfo("Заканчиваем Invoke метода");
                 return result;
 
