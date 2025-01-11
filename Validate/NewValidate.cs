@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using Autodesk.Revit.DB;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
+using Octokit;
+using System.Net;
 
 namespace AnlaxBase.Validate
 {
@@ -19,6 +22,26 @@ namespace AnlaxBase.Validate
 
         private string _user;
 
+        private string _email;
+
+        private string IpAdress
+        {
+            get
+            {
+                string hostName = Dns.GetHostName(); // Получение имени хоста
+                IPAddress[] addresses = Dns.GetHostAddresses(hostName); // Получение IP-адресов
+
+                foreach (IPAddress ip in addresses)
+                {
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) // Только IPv4
+                    {
+                        return ip.ToString();
+                    }
+                }
+                return string.Empty;
+            }
+        }
+
         private string _password;
 
         private string userInfo;
@@ -27,7 +50,7 @@ namespace AnlaxBase.Validate
 
         private string scheme = "public";
 
-        public string Expirationdate {  get; set; }
+        public string Expirationdate { get; set; }
 
         private string _tableName
         {
@@ -44,10 +67,21 @@ namespace AnlaxBase.Validate
 
         public NewValidate(string username, string password, Document doc = null)
         {
+            if (username.Contains("@"))
+            {
+                string pattern = @"@([^.]+)\."; // Регулярное выражение для извлечения части между @ и последней точкой
+                Match match = Regex.Match(username, pattern);
+                if (match.Success)
+                {
+                    _email = username;
+                    username = match.Groups[1].Value;
+                    
+                }
+            }
             _user = username;
             _password = password;
             _connectionString = "Host=91.245.227.212;Port=5432;Username=" + username + ";Password=" + password + ";Database=" + dataBase;
-       
+
             if (doc != null)
             {
                 userInfo = doc.Application.Username;
@@ -123,6 +157,17 @@ namespace AnlaxBase.Validate
                 authView.GreetingsBlock.Text = "Я Вас категорически приветствую. Введите логин и пароль.";
                 authView.ShowDialog();
                 _user = AuthSettingsDev.Initialize().Login;
+                if (_user.Contains("@"))
+                {
+                    string pattern = @"@([^.]+)\."; // Регулярное выражение для извлечения части между @ и последней точкой
+                    Match match = Regex.Match(_user, pattern);
+                    if (match.Success)
+                    {
+                        _email = _user;
+                        _user = match.Groups[1].Value;
+                        
+                    }
+                }
                 _password = AuthSettingsDev.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
             }
@@ -180,8 +225,8 @@ namespace AnlaxBase.Validate
             }
             else
             {
-                MessageBox.Show("Активирована лицензия с номером "+ num);
-            }    
+                MessageBox.Show("Активирована лицензия с номером " + num);
+            }
 
             AuthSettingsDev.Initialize().NumberLiscence = num;
             StaticAuthorization.SetLiscence(num);
@@ -196,7 +241,7 @@ namespace AnlaxBase.Validate
                 using NpgsqlConnection npgsqlConnection = new NpgsqlConnection(_connectionString);
                 npgsqlConnection.Open();
 
-                string cmdText = "SELECT numberliscence, datofissue, expirationdate, userrevit FROM " + scheme + "." + _tableName;
+                string cmdText = "SELECT numberliscence, datofissue, email, ipadress, expirationdate, userrevit FROM " + scheme + "." + _tableName;
 
                 using (NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection))
                 using (NpgsqlDataReader reader = npgsqlCommand.ExecuteReader())
@@ -213,8 +258,16 @@ namespace AnlaxBase.Validate
                         string userName = reader.IsDBNull(reader.GetOrdinal("userrevit"))
                             ? string.Empty
                             : reader.GetString(reader.GetOrdinal("userrevit"));
+                        string email = reader.IsDBNull(reader.GetOrdinal("email"))
+                            ? string.Empty
+                            : reader.GetString(reader.GetOrdinal("email"));
+                        string ipAdress = reader.IsDBNull(reader.GetOrdinal("ipadress"))
+                            ? string.Empty
+                            : reader.GetString(reader.GetOrdinal("ipadress"));
 
-                        liscences.Add(new ModelLiscence(dataOfIssue, expirationDate, userName, numberLiscence));
+
+
+                        liscences.Add(new ModelLiscence(dataOfIssue, expirationDate, userName, numberLiscence, ipAdress, email));
                     }
                 }
             }
@@ -234,6 +287,7 @@ namespace AnlaxBase.Validate
                 npgsqlConnection.Open();
                 using NpgsqlTransaction npgsqlTransaction = npgsqlConnection.BeginTransaction();
 
+                // Проверяем, есть ли уже запись для текущего userInfo
                 string cmdText = "SELECT numberliscence FROM " + scheme + "." + _tableName + " WHERE userrevit = @userInfo";
                 using (NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection, npgsqlTransaction))
                 {
@@ -243,16 +297,20 @@ namespace AnlaxBase.Validate
                     {
                         int result = (int)obj;
                         npgsqlTransaction.Rollback();
-                        return result;
+                        return result; // Возвращаем номер лицензии, если уже существует для userInfo
                     }
                 }
 
-                string cmdText2 = "SELECT numberliscence, expirationdate FROM " + scheme + "." + _tableName + " WHERE userrevit IS NULL OR LENGTH(userrevit) < 1 ORDER BY numberliscence LIMIT 1 FOR UPDATE";
-                using NpgsqlCommand npgsqlCommand2 = new NpgsqlCommand(cmdText2, npgsqlConnection, npgsqlTransaction);
+                // Ищем первую свободную лицензию
+                string cmdText2 = "SELECT numberliscence, expirationdate FROM " + scheme + "." + _tableName +
+                                  " WHERE (userrevit IS NULL OR LENGTH(userrevit) < 1) " +
+                                  "ORDER BY numberliscence LIMIT 1 FOR UPDATE";
+                using (NpgsqlCommand npgsqlCommand2 = new NpgsqlCommand(cmdText2, npgsqlConnection, npgsqlTransaction))
                 using (NpgsqlDataReader reader = npgsqlCommand2.ExecuteReader())
                 {
                     if (reader.Read())
                     {
+                        // Получаем номер лицензии и дату истечения
                         int num = reader.GetInt32(reader.GetOrdinal("numberliscence"));
                         Expirationdate = reader.IsDBNull(reader.GetOrdinal("expirationdate"))
                             ? null
@@ -260,26 +318,31 @@ namespace AnlaxBase.Validate
                         StaticAuthorization.ExperationDate = Expirationdate;
                         reader.Close();
 
-                        string cmdText3 = "UPDATE " + scheme + "." + _tableName + " SET userrevit = @userInfo WHERE numberliscence = @numberLiscence";
+                        // Обновляем только одну строку
+                        string cmdText3 = "UPDATE " + scheme + "." + _tableName +
+                                          " SET userrevit = @userInfo, ipadress = @ipadress, email = @Email " +
+                                          "WHERE numberliscence = @numberLiscence";
                         using (NpgsqlCommand npgsqlCommand3 = new NpgsqlCommand(cmdText3, npgsqlConnection, npgsqlTransaction))
                         {
                             npgsqlCommand3.Parameters.AddWithValue("@userInfo", userInfo);
+                            npgsqlCommand3.Parameters.AddWithValue("@ipadress", IpAdress);
+                            npgsqlCommand3.Parameters.AddWithValue("@Email", _email);
                             npgsqlCommand3.Parameters.AddWithValue("@numberLiscence", num);
                             npgsqlCommand3.ExecuteNonQuery();
                         }
 
                         npgsqlTransaction.Commit();
-                        return num;
+                        return num; // Возвращаем номер лицензии
                     }
                 }
 
                 npgsqlTransaction.Rollback();
-                return 0;
+                return 0; // Нет свободных лицензий
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Ошибка: " + ex.Message);
-                return 0;
+                return 0; // Ошибка
             }
         }
 
@@ -306,7 +369,7 @@ namespace AnlaxBase.Validate
                 {
                     npgsqlConnection.Open();
                     using NpgsqlTransaction npgsqlTransaction = npgsqlConnection.BeginTransaction();
-                    string cmdText = "UPDATE " + scheme + "." + _tableName + " SET userrevit = '' WHERE userrevit = @userInfo";
+                    string cmdText = "UPDATE " + scheme + "." + _tableName + " SET userrevit = '', ipadress = '', email = '' WHERE userrevit = @userInfo";
                     using NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection, npgsqlTransaction);
                     npgsqlCommand.Parameters.AddWithValue("@userInfo", userInfo);
                     int num2 = npgsqlCommand.ExecuteNonQuery();
@@ -329,7 +392,7 @@ namespace AnlaxBase.Validate
                 using NpgsqlConnection npgsqlConnection2 = new NpgsqlConnection(_connectionString);
                 npgsqlConnection2.Open();
                 using NpgsqlTransaction npgsqlTransaction2 = npgsqlConnection2.BeginTransaction();
-                string cmdText2 = "UPDATE " + scheme + "." + _tableName + " SET userrevit = '' WHERE numberliscence = @num";
+                string cmdText2 = "UPDATE " + scheme + "." + _tableName + " SET userrevit = '', ipadress = '', email = '' WHERE numberliscence = @num";
                 using NpgsqlCommand npgsqlCommand2 = new NpgsqlCommand(cmdText2, npgsqlConnection2, npgsqlTransaction2);
                 npgsqlCommand2.Parameters.AddWithValue("@num", num);
                 int num3 = npgsqlCommand2.ExecuteNonQuery();
@@ -352,7 +415,7 @@ namespace AnlaxBase.Validate
             }
         }
 
-        public bool ReleaseSilenceLicense()
+            public bool ReleaseSilenceLicense()
         {
             int numberLiscence = AuthSettingsDev.Initialize().NumberLiscence;
             if (!CanConnectToDatabase())
@@ -365,7 +428,7 @@ namespace AnlaxBase.Validate
                 using NpgsqlConnection npgsqlConnection = new NpgsqlConnection(_connectionString);
                 npgsqlConnection.Open();
                 using NpgsqlTransaction npgsqlTransaction = npgsqlConnection.BeginTransaction();
-                string cmdText = "UPDATE " + scheme + "." + _tableName + " SET userrevit = '' WHERE numberliscence = @num";
+                string cmdText = "UPDATE " + scheme + "." + _tableName + " SET userrevit = '', ipadress = '', email = '' WHERE numberliscence = @num";
                 using NpgsqlCommand npgsqlCommand = new NpgsqlCommand(cmdText, npgsqlConnection, npgsqlTransaction);
                 npgsqlCommand.Parameters.AddWithValue("@num", numberLiscence);
                 int num = npgsqlCommand.ExecuteNonQuery();

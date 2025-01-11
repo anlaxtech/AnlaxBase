@@ -11,12 +11,14 @@ namespace AnlaxBase.Validate
 
     public class ModelLiscence : INotifyPropertyChanged
     {
-        public ModelLiscence (string DataofIssie,string Expirationdate,string UserName,int NumLiscence)
+        public ModelLiscence (string DataofIssie,string Expirationdate,string UserName,int NumLiscence,string ipadress,string email)
         {
             this.DataofIssie= DataofIssie;
             this.Expirationdate=Expirationdate;
             this.UserName=UserName;
             this.NumLiscence = NumLiscence;
+            ipAdress = ipadress;
+            Email = email;
         }
 
         private string dataofIssie;
@@ -62,7 +64,27 @@ namespace AnlaxBase.Validate
                 OnPropertyChanged("NumLiscence");
             }
         }
+        private string email;
+        public string Email
+        {
+            get { return email; }
+            set
+            {
+                email = value;
+                OnPropertyChanged("Email");
+            }
+        }
 
+        private string ipAdress;
+        public string IpAdress
+        {
+            get { return ipAdress; }
+            set
+            {
+                ipAdress = value;
+                OnPropertyChanged("IpAdress");
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName] string prop = "")

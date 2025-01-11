@@ -83,6 +83,8 @@
                 <DataGridTextColumn Header="Дата выдачи" Binding="{Binding DataofIssie, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="110"/>
                 <DataGridTextColumn Header="Дата окончания" Binding="{Binding Expirationdate, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="110"/>
                 <DataGridTextColumn Header="Пользователь" Binding="{Binding UserName, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTextColumn Header="IP-адрес" Binding="{Binding IpAdress, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTextColumn Header="Email" Binding="{Binding Email, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
         <Button Content="ИФОРМАЦИЯ О ЛИЦЕНЗИЯХ"
