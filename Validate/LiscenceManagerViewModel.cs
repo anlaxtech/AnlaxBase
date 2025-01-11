@@ -13,7 +13,7 @@ namespace AnlaxBase.Validate
 {
     public class LiscenceManagerViewModel : INotifyPropertyChanged
     {
-        private AuthSettingsDev auth;
+        private AuthSettingsBase auth;
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ObservableCollection<ModelLiscence> Liscences { get; set; }
@@ -26,7 +26,7 @@ namespace AnlaxBase.Validate
         NewValidate NewValidateManager{ get; set; }
         public LiscenceManagerViewModel() 
         {
-            auth = AuthSettingsDev.Initialize(true);
+            auth = AuthSettingsBase.Initialize(true);
             NewValidateManager = new NewValidate(auth.Login, auth.Password);
             UserName = auth.Login;
             Password = auth.Password;

@@ -20,7 +20,7 @@ namespace AnlaxBase
         {
             if (StaticAuthorization.GetLiscence() == 0)
             {
-                AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
+                AuthSettingsBase auth = AuthSettingsBase.Initialize(true);
                 NewValidate postgresSQLValidate = new NewValidate(auth.Login, auth.Password, commandData.Application.ActiveUIDocument.Document);
                 postgresSQLValidate.CheckLicenseSilence();
             }
