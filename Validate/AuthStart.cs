@@ -18,7 +18,7 @@ namespace AnlaxBase
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
+            AuthSettingsBase auth = AuthSettingsBase.Initialize(true);
             Document currentDoc = commandData.Application.ActiveUIDocument.Document;
             int numLiscence=StaticAuthorization.GetLiscence();
             if (numLiscence == 0 )

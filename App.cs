@@ -77,7 +77,7 @@ namespace AnlaxBase
         {
             get
             {
-                return TabName+"ComboBoxChoose" + comboBoxCountReload;
+                return TabName + "ComboBoxChoose" + comboBoxCountReload;
             }
         }
         private int comboBoxCountReload { get; set; }
@@ -102,7 +102,7 @@ namespace AnlaxBase
         {
             try
             {
-                AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
+                AuthSettingsBase auth = AuthSettingsBase.Initialize(true);
                 NewValidate newValidate = new NewValidate(auth.Login, auth.Password);
                 newValidate.ReleaseSilenceLicense();
                 PackageLogManager.ClearLogFile();
@@ -286,21 +286,12 @@ namespace AnlaxBase
             pluginDirectory = Path.GetDirectoryName(assemblyLocation);
             LoadDependentAssemblies();
             uiappStart = application;
-            if (assemblyLocation.Contains("AnlaxBaseDev"))
-            {
-                AuthSettingsDev auth = AuthSettingsDev.Initialize(true);
-                auth.Uiapp = uiappStart;
-                AutoUpdateStart = auth.UpdateStart;
-                TabName = auth.TabName;
-            }
-            else
-            {
-                AuthSettings auth = AuthSettings.Initialize(true);
 
-                auth.Uiapp = uiappStart;
-                AutoUpdateStart = auth.UpdateStart;
-                TabName = auth.TabName;
-            }
+            AuthSettingsBase auth = AuthSettingsBase.Initialize(true);
+            auth.Uiapp = uiappStart;
+            AutoUpdateStart = auth.UpdateStart;
+            TabName = auth.TabName;
+
 
 
             SubscribeOnButtonCliks();
@@ -313,7 +304,7 @@ namespace AnlaxBase
             PushButtonData pushButtonData = new PushButtonData(nameof(OpenWebHelp), "База\nзнаний", assemblyLocation, typeof(OpenWebHelp).FullName);
             pushButtonData.LargeImage = new BitmapImage(new Uri($@"/{DllName};component/Icons/Day - Knowledge base.png", UriKind.RelativeOrAbsolute));
             ribbonPanelBase.AddItem(pushButtonData);
-            
+
             PushButtonData pushButtonDataAuth = new PushButtonData(nameof(AuthStart), "Войти в\nсистему", assemblyLocation, typeof(AuthStart).FullName);
             pushButtonDataAuth.LargeImage = new BitmapImage(new Uri($@"/{DllName};component/Icons/Day - Log in.png", UriKind.RelativeOrAbsolute));
             ribbonPanelBase.AddItem(pushButtonDataAuth);
@@ -455,49 +446,49 @@ namespace AnlaxBase
 
                             if (runtimeType != null)
                             {
-                                    object instance = Activator.CreateInstance(runtimeType);
-                                    // Создаем экземпляр класса
-                                    if (instance != null)
-                                    {
+                                object instance = Activator.CreateInstance(runtimeType);
+                                // Создаем экземпляр класса
+                                if (instance != null)
+                                {
                                     AnlaxApplicationInfo anlaxApplicationInfo = new AnlaxApplicationInfo(uiappStart, dll, TabName, assembly);
                                     // Ищем метод "GetRevitRibbonPanelCustom"
                                     var onStartupMethod = runtimeType.GetMethod("GetRevitRibbonPanelCustom");
 
-                                        if (onStartupMethod != null)
+                                    if (onStartupMethod != null)
                                     {
 
                                         // Вызов метода "GetRevitRibbonPanelCustom"
                                         RevitRibbonPanelCustom revitRibbonPanelCustom =
                                                 (RevitRibbonPanelCustom)onStartupMethod.Invoke(instance, new object[] { anlaxApplicationInfo });
 
-                                            if (revitRibbonPanelCustom != null)
+                                        if (revitRibbonPanelCustom != null)
+                                        {
+                                            revitRibbonPanelCustom.AssemlyPath = dll;
+                                            revitRibbonPanelCustom.AssemblyLoad = assembly;
+                                            revitRibbonPanelCustom.TabName = TabName;
+                                            // Дополнительная обработка, как и в вашем коде
+                                            if (revitRibbonPanelCustoms.Any(it => it.NamePanel == revitRibbonPanelCustom.NamePanel))
                                             {
-                                                revitRibbonPanelCustom.AssemlyPath = dll;
-                                                revitRibbonPanelCustom.AssemblyLoad = assembly;
-                                                revitRibbonPanelCustom.TabName = TabName;
-                                                // Дополнительная обработка, как и в вашем коде
-                                                if (revitRibbonPanelCustoms.Any(it => it.NamePanel == revitRibbonPanelCustom.NamePanel))
+                                                var oldPanel = revitRibbonPanelCustoms
+                                                    .FirstOrDefault(it => it.NamePanel == revitRibbonPanelCustom.NamePanel);
+                                                if (oldPanel != null)
                                                 {
-                                                    var oldPanel = revitRibbonPanelCustoms
-                                                        .FirstOrDefault(it => it.NamePanel == revitRibbonPanelCustom.NamePanel);
-                                                    if (oldPanel != null)
-                                                    {
-                                                        oldPanel.Buttons.AddRange(revitRibbonPanelCustom.Buttons);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    revitRibbonPanelCustom.AddToComboBox(comboBoxChoose);
-                                                    revitRibbonPanelCustoms.Add(revitRibbonPanelCustom);
+                                                    oldPanel.Buttons.AddRange(revitRibbonPanelCustom.Buttons);
                                                 }
                                             }
-                                        }
-                                        else
-                                        {
-                                            PackageLogManager.LogError("Метод GetRevitRibbonPanelCustom не найден.");
+                                            else
+                                            {
+                                                revitRibbonPanelCustom.AddToComboBox(comboBoxChoose);
+                                                revitRibbonPanelCustoms.Add(revitRibbonPanelCustom);
+                                            }
                                         }
                                     }
-                                
+                                    else
+                                    {
+                                        PackageLogManager.LogError("Метод GetRevitRibbonPanelCustom не найден.");
+                                    }
+                                }
+
                                 else
                                 {
                                     PackageLogManager.LogError("Конструктор с требуемыми параметрами не найден.");

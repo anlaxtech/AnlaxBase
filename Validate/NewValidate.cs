@@ -89,7 +89,7 @@ namespace AnlaxBase.Validate
         }
         public bool CheckLicenseSilence()
         {
-            if (AuthSettingsDev.Initialize().NumberLiscence > 0)
+            if (AuthSettingsBase.Initialize().NumberLiscence > 0)
             {
                 return true;
             }
@@ -109,7 +109,7 @@ namespace AnlaxBase.Validate
             {
                 return false;
             }
-            AuthSettingsDev.Initialize().NumberLiscence = num;
+            AuthSettingsBase.Initialize().NumberLiscence = num;
             StaticAuthorization.SetLiscence(num);
             return true;
         }
@@ -156,7 +156,7 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView = new AuthViewNew();
                 authView.GreetingsBlock.Text = "Я Вас категорически приветствую. Введите логин и пароль.";
                 authView.ShowDialog();
-                _user = AuthSettingsDev.Initialize().Login;
+                _user = AuthSettingsBase.Initialize().Login;
                 if (_user.Contains("@"))
                 {
                     string pattern = @"@([^.]+)\."; // Регулярное выражение для извлечения части между @ и последней точкой
@@ -168,7 +168,7 @@ namespace AnlaxBase.Validate
                         
                     }
                 }
-                _password = AuthSettingsDev.Initialize().Password;
+                _password = AuthSettingsBase.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
             }
 
@@ -182,8 +182,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView2 = new AuthViewNew();
                 authView2.GreetingsBlock.Text = "В системе не задан логин или пароль. Введите логин или пароль в форме ниже.Тетовая версия работает до 50 элементов заданий и отверстий";
                 authView2.ShowDialog();
-                _user = AuthSettingsDev.Initialize().Login;
-                _password = AuthSettingsDev.Initialize().Password;
+                _user = AuthSettingsBase.Initialize().Login;
+                _password = AuthSettingsBase.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
             }
 
@@ -192,8 +192,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView3 = new AuthViewNew();
                 authView3.GreetingsBlock.Text = "Не удалось войти по логину и паролю. Повторите ввод";
                 authView3.ShowDialog();
-                _user = AuthSettingsDev.Initialize().Login;
-                _password = AuthSettingsDev.Initialize().Password;
+                _user = AuthSettingsBase.Initialize().Login;
+                _password = AuthSettingsBase.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
                 if (!CanConnectToDatabase())
                 {
@@ -207,8 +207,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView4 = new AuthViewNew();
                 authView4.GreetingsBlock.Text = "Все лицензии заняты. Повторите ввод";
                 authView4.ShowDialog();
-                _user = AuthSettingsDev.Initialize().Login;
-                _password = AuthSettingsDev.Initialize().Password;
+                _user = AuthSettingsBase.Initialize().Login;
+                _password = AuthSettingsBase.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
                 if (!CheckAvailableLicense())
                 {
@@ -228,7 +228,7 @@ namespace AnlaxBase.Validate
                 MessageBox.Show("Активирована лицензия с номером " + num);
             }
 
-            AuthSettingsDev.Initialize().NumberLiscence = num;
+            AuthSettingsBase.Initialize().NumberLiscence = num;
             StaticAuthorization.SetLiscence(num);
             return true;
         }
@@ -353,8 +353,8 @@ namespace AnlaxBase.Validate
                 AuthViewNew authView = new AuthViewNew();
                 authView.GreetingsBlock.Text = "Не удалось войти по логину и паролю. Повторите ввод";
                 authView.ShowDialog();
-                _user = AuthSettingsDev.Initialize().Login;
-                _password = AuthSettingsDev.Initialize().Password;
+                _user = AuthSettingsBase.Initialize().Login;
+                _password = AuthSettingsBase.Initialize().Password;
                 _connectionString = "Host=91.245.227.212;Port=5432;Username=" + _user + ";Password=" + _password + ";Database=" + dataBase;
                 if (!CanConnectToDatabase())
                 {
@@ -377,7 +377,7 @@ namespace AnlaxBase.Validate
                     {
                         npgsqlTransaction.Commit();
                         MessageBox.Show("Лицензия успешно освобождена.");
-                        AuthSettingsDev.Initialize().NumberLiscence = 0;
+                        AuthSettingsBase.Initialize().NumberLiscence = 0;
                         return true;
                     }
 
@@ -400,7 +400,7 @@ namespace AnlaxBase.Validate
                 {
                     npgsqlTransaction2.Commit();
                     MessageBox.Show("Лицензия успешно освобождена.");
-                    AuthSettingsDev.Initialize().NumberLiscence = 0;
+                    AuthSettingsBase.Initialize().NumberLiscence = 0;
                     return true;
                 }
 
@@ -417,7 +417,7 @@ namespace AnlaxBase.Validate
 
             public bool ReleaseSilenceLicense()
         {
-            int numberLiscence = AuthSettingsDev.Initialize().NumberLiscence;
+            int numberLiscence = AuthSettingsBase.Initialize().NumberLiscence;
             if (!CanConnectToDatabase())
             {
                 return false;
@@ -435,7 +435,7 @@ namespace AnlaxBase.Validate
                 if (num > 0)
                 {
                     npgsqlTransaction.Commit();
-                    AuthSettingsDev.Initialize().NumberLiscence = 0;
+                    AuthSettingsBase.Initialize().NumberLiscence = 0;
                     return true;
                 }
 
