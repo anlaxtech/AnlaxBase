@@ -37,8 +37,8 @@
     <AssemblyName>$(AssemblyName)Dev</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyFileVersion>1.2.5</AssemblyFileVersion>
-    <Version>$(RevitVersion).1.2.5</Version>
+    <AssemblyFileVersion>1.2.6</AssemblyFileVersion>
+    <Version>$(RevitVersion).1.2.6</Version>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -102,9 +102,35 @@
     <!-- Перемещаем архив в папку Release -->
     <Message Text="Перемещение архива $(ZipFilePath) в папку $(ReleaseFolderPath)" Importance="high" />
     <Move SourceFiles="$(ZipFilePath)" DestinationFolder="$(ReleaseFolderPath)" />
-  </Target>  
-  
-  
+  </Target>
+
+  <Target Name="CopyBuildOutputToRevitAddinsFolder" AfterTargets="Build" Condition="$(Configuration.Contains('Debug'))">
+    <PropertyGroup>
+      <!-- Путь для копирования -->
+      <OutputPath>C:\ProgramData\Autodesk\Revit\Addins\$(RevitVersion)\AnlaxDev\</OutputPath>
+    </PropertyGroup>
+
+    <!-- Проверяем, существует ли папка -->
+    <Message Text="Проверка существования папки $(OutputPath)" Importance="high" />
+    <ItemGroup>
+      <CheckFolder Include="$(OutputPath)" Condition="Exists('$(OutputPath)')" />
+    </ItemGroup>
+
+    <Message Text="Существование папки: @(CheckFolder-&gt;Count())" Importance="high" />
+
+    <!-- Проверяем, есть ли файлы для копирования -->
+    <ItemGroup>
+      <BuildOutputFiles Include="$(TargetDir)**\*.*" />
+    </ItemGroup>
+
+    <Message Text="Файлы для копирования из сборки:" Importance="high" />
+    <Message Text="@(BuildOutputFiles)" Importance="high" />
+
+    <!-- Копируем файлы с сохранением структуры папок, если папка существует и есть файлы -->
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFiles="@(BuildOutputFiles->'$(OutputPath)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" Condition="@(CheckFolder-&gt;Count()) &gt; 0 AND @(BuildOutputFiles-&gt;Count()) &gt; 0" />
+
+    <Message Text="Копирование завершено для выходных файлов в $(OutputPath)." Importance="high" />
+  </Target>
 
   
   <ItemGroup>
