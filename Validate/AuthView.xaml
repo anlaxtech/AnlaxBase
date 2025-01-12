@@ -34,16 +34,16 @@
                 VerticalAlignment="Bottom"
                 HorizontalAlignment="Center"
                 Width="330" Click="Button_Click" />
-        <TextBlock Text="Логин"
+        <TextBlock
                Style="{StaticResource BaseText}"
                HorizontalAlignment="Left"
                Margin="10,86,0,0"
-               VerticalAlignment="Top" />
-        <TextBlock Text="Пароль"
+               VerticalAlignment="Top" Width="211" ><Run Language="ru-ru" Text="Почта/логин"/></TextBlock>
+        <TextBlock Text="Лицензионный ключ"
                Style="{StaticResource BaseText}"
                HorizontalAlignment="Left"
                Margin="10,142,0,0"
-               VerticalAlignment="Top" />
+               VerticalAlignment="Top" Width="218" />
         <TextBlock x:Name="GreetingsBlock" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,35,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Text="Приветствую"/><Run Language="ru-ru" Text="!"/></TextBlock>
         <TextBlock x:Name="Headerd" Style="{StaticResource HeaderTextBlock}"
             HorizontalAlignment="Left"

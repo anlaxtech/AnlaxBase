@@ -25,8 +25,8 @@ namespace AnlaxBase.Validate
             InitializeComponent();
             try
             {
-                loginTextBox.Text = AuthSettingsDev.Initialize().Login;
-                passwordTextBox.Text = AuthSettingsDev.Initialize().Password;
+                loginTextBox.Text = AuthSettingsBase.Initialize().Login;
+                passwordTextBox.Text = AuthSettingsBase.Initialize().Password;
             }
             catch { }
 
@@ -34,9 +34,9 @@ namespace AnlaxBase.Validate
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            AuthSettingsDev.Initialize().Login = loginTextBox.Text;
-            AuthSettingsDev.Initialize().Password = passwordTextBox.Text;
-            AuthSettingsDev.Initialize().SaveJson();
+            AuthSettingsBase.Initialize().Login = loginTextBox.Text;
+            AuthSettingsBase.Initialize().Password = passwordTextBox.Text;
+            AuthSettingsBase.Initialize().SaveJson();
             Close();
         }
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)

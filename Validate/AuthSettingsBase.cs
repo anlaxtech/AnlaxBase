@@ -12,10 +12,10 @@ using System.Windows;
 
 namespace AnlaxBase
 {
-    public class AuthSettingsDev
+    public class AuthSettingsBase
     {
-        private static AuthSettingsDev settings = null;
-        protected AuthSettingsDev() { }
+        private static AuthSettingsBase settings = null;
+        protected AuthSettingsBase() { }
         public static string AssemblyBaseLocation { get; set; }
 
         public string AssemblyLocation
@@ -36,7 +36,7 @@ namespace AnlaxBase
         /// </summary>
         /// <param name="authInBase"></param>
         /// <returns></returns>
-        public static AuthSettingsDev Initialize(bool authInBase = false)
+        public static AuthSettingsBase Initialize(bool authInBase = false)
         {
             if (authInBase)
             {
@@ -71,16 +71,16 @@ namespace AnlaxBase
                     try
                     {
                         string json = File.ReadAllText(settingsFilePath);
-                        settings = JsonConvert.DeserializeObject<AuthSettingsDev>(json);
+                        settings = JsonConvert.DeserializeObject<AuthSettingsBase>(json);
                     }
                     catch
                     {
-                        MessageBox.Show("Ошибка считывания файла настройек json. Проверьте файл settingsVoid.json на корректность");
+                        MessageBox.Show("Ошибка считывания файла настройек json. Проверьте файл BaseSettings.json на корректность");
                     }
                 }
                 else
                 {
-                    settings = new AuthSettingsDev();
+                    settings = new AuthSettingsBase();
                     settings.SetDefaultValue();
                     string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                     // Write JSON string to file
@@ -125,7 +125,7 @@ namespace AnlaxBase
         {
             Login = "Введите логин";
             Password = "Введите пароль";
-            TabName = "Anlax";
+            TabName = "AnlaxApp";
             URLBaseKnowledge = "https://anlax.org/technology/knowledge-base/";
             UpdateStart = true;
 
